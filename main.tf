@@ -49,6 +49,10 @@ module "key_pair" {
   create_private_key = true
 }
 
+# This really shouldn't be a module, but I copy-pasted and did some serious refactoring 
+# out of https://github.com/meyerkev/eks-tf-interview-template
+#
+# So it's a module now.  
 module "eks" {
     source = "./modules/eks"
     aws_region = var.aws_region
@@ -59,4 +63,19 @@ module "eks" {
     vpc_subnets = module.vpc.public_subnets
 
     eks_key_pair_name = var.create_key_pair ? module.key_pair.key_pair_name : var.key_pair_name
+}
+
+output "update_kubeconfig" {
+  value = "aws eks --region ${var.aws_region} update-kubeconfig --name ${module.eks.cluster_name}"
+}
+
+# install jenkins
+resource "helm_release" "jenkins" {
+  name      = "jenkins"
+  repository = "https://charts.jenkins.io"
+  chart     = "jenkins"
+  namespace = "jenkins"
+  version   = "4.8.2"
+
+  create_namespace = true
 }
