@@ -65,10 +65,6 @@ module "eks" {
     eks_key_pair_name = var.create_key_pair ? module.key_pair.key_pair_name : var.key_pair_name
 }
 
-output "update_kubeconfig" {
-  value = "aws eks --region ${var.aws_region} update-kubeconfig --name ${module.eks.cluster_name}"
-}
-
 # install jenkins
 resource "helm_release" "jenkins" {
   name      = "jenkins"
@@ -78,4 +74,21 @@ resource "helm_release" "jenkins" {
   version   = "4.8.2"
 
   create_namespace = true
+
+  set {
+    name  = "controller.serviceType"
+    value = "LoadBalancer"
+  }
+}
+
+module "alb-ingress-controller" {
+  source  = "campaand/alb-ingress-controller/aws"
+  version = "2.0.0"
+  cluster_name = module.eks.cluster_name
+
+  depends_on = [module.eks]
+}
+
+resource "aws_ecr_repository" "weather" {
+  name = "weather"
 }
