@@ -1,8 +1,8 @@
 locals {
-  availability_zones = ["${var.region}a", "${var.region}b", "${var.region}c"]
   # This is sort of weird and I could see myself rewriting it in the future
   # But I have many x86 laptops AND an ARM laptop.  
-  # And it's a lot easier to have architecure agreement between them.  
+  # And it's a lot easier to have architecure agreement between the place 
+  # I make my docker files and the place I run them.  
   # 
   # If you set an instance type, it will use that and then look up the architecture
   # BUT if you set a target architecture, it will use that and then look up the ideal instance type of that architecture and then re-lookup the architecture
@@ -23,7 +23,7 @@ locals {
 # But that's why I let you override it.  
 data "external" "architecture" {
   count   = var.target_architecture == null ? 1 : 0
-  program = ["./scripts/architecture_check.sh"]
+  program = ["${path.module}/scripts/architecture_check.sh"]
 }
 
 data "aws_ec2_instance_type" "eks_node_instance_type" {
@@ -31,41 +31,6 @@ data "aws_ec2_instance_type" "eks_node_instance_type" {
 }
 
 data "aws_caller_identity" "current" {}
-
-module "vpc" {
-  source  = "terraform-aws-modules/vpc/aws"
-  version = "~>5.1.2"
-
-  name = var.vpc_name == null ? "${var.cluster_name}-eks-vpc" : var.vpc_name
-  cidr = var.vpc_cidr
-
-  azs = local.availability_zones
-
-  # TODO: Some regions have more than 4 AZ's
-  public_subnets   = [for i, az in local.availability_zones : cidrsubnet(var.vpc_cidr, 8, i)]
-  private_subnets  = [for i, az in local.availability_zones : cidrsubnet(var.vpc_cidr, 8, i + 4)]
-  database_subnets = [for i, az in local.availability_zones : cidrsubnet(var.vpc_cidr, 8, i + 8)]
-
-  enable_dns_hostnames = true
-
-  # Enable NAT Gateway
-  # Expensive, but a requirement 
-  enable_nat_gateway      = true
-  single_nat_gateway      = true
-  one_nat_gateway_per_az  = false
-  enable_vpn_gateway      = true
-  map_public_ip_on_launch = true
-
-  public_subnet_tags = {
-    "kubernetes.io/role/elb" : 1
-    "kubernetes.io/cluster/${var.cluster_name}" : "shared"
-  }
-
-  private_subnet_tags = {
-    "kubernetes.io/role/internal-elb" : 1
-    "kubernetes.io/cluster/${var.cluster_name}" : "shared"
-  }
-}
 
 //*
 module "eks" {
@@ -79,22 +44,15 @@ module "eks" {
   create_iam_role                = true
 
   manage_aws_auth_configmap = true
-  aws_auth_users = concat(var.interviewee_name != null ? [
-    # Once again, this might not be ideal except in an interview setting
-    {
-      userarn  = aws_iam_user.interviewee[0].arn
-      username = aws_iam_user.interviewee[0].name
-      groups   = ["system:masters"]
-    }
-  ] : [],
-  # For some reason, my IAM identity map didn't get added to my cluster.  
-  local.add_user ? [
+  
+  # For some reason, my IAM user I'm using to build didn't get added to my cluster.  
+  aws_auth_users = local.add_user ? [
     {
       userarn  = data.aws_caller_identity.current.arn
       username = data.aws_caller_identity.current.user_id
       groups   = ["system:masters"]
     }
-  ] : [])
+  ] : []
 
   cluster_addons = {
     coredns = {
@@ -108,10 +66,8 @@ module "eks" {
     }
   }
 
-  vpc_id = module.vpc.vpc_id
-  # In production, it is strongly preferred to use private subnets, but this reduces friction in the interview
-  # No VPN required!
-  subnet_ids = module.vpc.public_subnets
+  vpc_id = var.vpc_id
+  subnet_ids = var.vpc_subnets
 
   eks_managed_node_group_defaults = {
     # I make exactly zero promises that this is complete, but basically pick an instance type that matches your architecture
@@ -136,7 +92,7 @@ module "eks" {
 
       # Remote access cannot be specified with a launch template
       remote_access = {
-        ec2_ssh_key               = module.key_pair.key_pair_name
+        ec2_ssh_key               = var.eks_key_pair_name
         source_security_group_ids = [aws_security_group.remote_access.id]
       }
     }
@@ -154,18 +110,10 @@ module "eks" {
 }
 //*/
 
-module "key_pair" {
-  source  = "terraform-aws-modules/key-pair/aws"
-  version = "~> 2.0"
-
-  key_name_prefix    = "meyerkev-local"
-  create_private_key = true
-}
-
 resource "aws_security_group" "remote_access" {
   name_prefix = "eks-remote-access"
   description = "Allow remote SSH access"
-  vpc_id      = module.vpc.vpc_id
+  vpc_id      = var.vpc_id
 
   ingress {
     description = "All access"
