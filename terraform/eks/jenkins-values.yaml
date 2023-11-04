@@ -7,5 +7,12 @@ controller:
 
   # The one weakness of Helm charts is that I have to actually maintain these 
   # because the git plugin needs to be updated to support the latest version of git
-  additionalPlugins: []
-  # Github:1.37.3.1
+  additionalPlugins:
+  # - github
+  - script-security:1265.va_fb_290b_4b_d34 
+  - workflow-scm-step:415.v434365564324
+  - pipeline-groovy-lib:689.veec561a_dee13
+  - pipeline-model-api:1.9.3
+  - pipeline-stage-step:305.ve96d0205c1c6
+  - workflow-cps-global-lib:609.vd95673f149b_b
+

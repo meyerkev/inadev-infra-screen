@@ -64,7 +64,7 @@ def setup_jenkins_project():
     try:
         server.create_folder(folder_name)
     except jenkins.JenkinsException as original_exception:
-        try:        
+        try:
             server.assert_folder(folder_name)
         except jenkins.JenkinsException as assert_exception:
             print(f"Failed to create Jenkins folder '{folder_name}'.")
@@ -72,15 +72,18 @@ def setup_jenkins_project():
             print(f"Assert exception: {assert_exception}")
             raise original_exception
 
-    return 
-    # Create a new Jenkins credential
+    project_name = "inadev-kmeyer/inadev-kmeyer-configured"
+    # Create a new Jenkins project
     try:
-        server.create_credential(folder_name)
-    except jenkins.JenkinsException:
+        server.create_job(project_name, jenkins.EMPTY_CONFIG_XML)
+    except jenkins.JenkinsException as original_exception:
         try:
-            server.assert_credential(folder_name, "github")
-        except:
-            pass
+            server.assert_job(project_name)
+        except jenkins.JenkinsException as assert_exception:
+            print(f"Failed to create Jenkins project '{project_name}'.")
+            print(f"Original exception: {original_exception}")
+            print(f"Assert exception: {assert_exception}")
+            raise original_exception
 
     
 
