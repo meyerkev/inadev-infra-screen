@@ -24,10 +24,14 @@ set -u
 
 cd $(dirname $0)
 
+echo "Building docker images"
+
 # Make your image first so if it breaks, you're not waiting for the 45 minute long EKS cluster to build (... or fail to build)
 docker build --build-arg OPENWEATHERMAP_API_KEY=$OPENWEATHERMAP_API_KEY -t weather -f src/app/Dockerfile src/app
 docker build -t custom-jenkins-agent -f src/jenkins-agent/Dockerfile src/jenkins-agent
 
+echo "Done building docker images"
+echo "Building terraform for the ECR repostiories and EKS cluster"
 # Make the ECR repos
 pushd terraform/ecr
 terraform init
@@ -60,9 +64,14 @@ terraform apply -auto-approve -var-file=tfvars/inadev.tfvars -var "jenkins_agent
 KUBECONFIG_COMMAND=`terraform output -raw update_kubeconfig`
 $KUBECONFIG_COMMAND
 
+echo "Done building terraform for the ECR repostiories and EKS cluster"
+echo "To access the cluster, run the following command:"
+echo "$KUBECONFIG_COMMAND"
 # And now we can start talking to Jenkins
 # Ideally, you would actually know all of these things walking into this instead of borrowing the default values
 # but limits of a job interview
+
+echo "Waiting for Jenkins to come up"
 JENKINS_ENDPOINT=$(terraform output -raw jenkins_endpoint)
 # /login is important, because otherwise it 403's
 while [[ $(curl -s -o /dev/null -w "%{http_code}" $JENKINS_ENDPOINT/login) != "200" ]]; do
@@ -75,6 +84,8 @@ JENKINS_PASSWORD=$(terraform output -raw jenkins_password)
 
 popd
 
+echo "Jenkins is up; Configuring Jenkins"
+
 docker build -t jenkins-setup -f src/jenkins-setup/Dockerfile src/jenkins-setup
 
 #TODO: Send in the branch as a variable so our job uses the latest code for the branch
@@ -86,13 +97,33 @@ docker run \
     -e GITHUB_REPOSITORY_URL="$GITHUB_REPOSITORY_URL" \
     -e APP_IMAGE="$APP_IMAGE" jenkins-setup
 
-echo "Jenkins is up at $JENKINS_ENDPOINT"
-echo "Username: $JENKINS_USERNAME"
-echo "Password: $JENKINS_PASSWORD"
+
 # Q: Does it make sense to kill the setup container?
 # A: Not while debugging, it doesn't.
 # docker image rm jenkins-setup
 
+echo "Jenkins has been configured and we have triggered a build."
+echo "Waiting for the build to complete and the service to come up"
+#Wait for the service to come up
+set +e # Don't exit on error
+while true; do
+    if kubectl get svc --namespace inadev-kmeyer inadev-kmeyer --template "{{ range (index .status.loadBalancer.ingress 0) }}{{.}}{{ end }}" 2>&1 >/dev/null; then
+        break
+    fi
+    echo "Waiting for service to come up"
+    sleep 5
+done
+
+
 export SERVICE_IP=$(kubectl get svc --namespace inadev-kmeyer inadev-kmeyer --template "{{ range (index .status.loadBalancer.ingress 0) }}{{.}}{{ end }}")
+while [[ $(curl -s -o /dev/null -w "%{http_code}" http://$SERVICE_IP) != "200" ]]; do
+    echo "Waiting for service to come up"
+    sleep 5
+done
+echo
+echo
+echo "Jenkins is up at $JENKINS_ENDPOINT"
+echo "Username: $JENKINS_USERNAME"
+echo "Password: $JENKINS_PASSWORD"
 echo "Your service can be found at: http://$SERVICE_IP"
 
