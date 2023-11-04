@@ -15,8 +15,11 @@ RUN curl -LO https://storage.googleapis.com/kubernetes-release/release/${KUBECTL
     mv ./kubectl /usr/local/bin/kubectl
 
 # Get AWS CLI
-RUN apt install -y python3-pip && \
-    pip3 install awscli --upgrade --user && \
-    ln -s /root/.local/bin/aws /usr/local/bin/aws
+RUN apt install unzip \
+    && curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip" \
+    && unzip awscliv2.zip \
+    && ./aws/install \
+    && rm -rf awscliv2.zip aws \
+    && apt remove unzip -y
 
 USER jenkins
