@@ -105,6 +105,26 @@ resource "helm_release" "jenkins" {
   wait_for_jobs = true
 }
 
+resource "kubernetes_role_binding" "jenkins" {
+  metadata {
+    name      = "jenkins"
+    namespace = local.helm_namespace
+  }
+
+  role_ref {
+    api_group = "rbac.authorization.k8s.io"
+    kind      = "ClusterRole"
+    name      = "cluster-admin"
+  }
+
+  subject {
+    kind      = "ServiceAccount"
+    name      = "default"
+    namespace = local.helm_namespace
+  }
+
+}
+
 data "kubernetes_service" "jenkins" {
   metadata {
     name      = "jenkins"
