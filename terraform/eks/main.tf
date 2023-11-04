@@ -105,10 +105,47 @@ resource "helm_release" "jenkins" {
   wait_for_jobs = true
 }
 
-resource "kubernetes_role_binding" "jenkins" {
+# Everything about this is actually terrifying.  
+# But I was having so many hours upon hours of problems with plugin versions that adding more plugins to the mix was just not an option
+# So basically, we're doing a hack
+# Specifically, the default jenkins serviceaccount is called default and now it has cluster-admin and can do whatever it wants
+# Like say locally install a helm chart into the cluster that it's installed on
+# namespaces is forbidden: User "system:serviceaccount:jenkins:default" cannot create resource "namespaces" in API group "" at the cluster scope
+resource "kubernetes_cluster_role" "create_namespaces"{
+  metadata {
+    name      = "create-namespaces"
+  }
+
+  rule {
+    api_groups = [""]
+    resources  = ["namespaces"]
+    verbs      = ["create"]
+  }
+}
+
+resource "kubernetes_cluster_role_binding" "create_namespaces" {
+  metadata {
+    name      = "create-namespaces"
+  }
+
+  role_ref {
+    api_group = "rbac.authorization.k8s.io"
+    kind      = "ClusterRole"
+    name      = kubernetes_cluster_role.create_namespaces.metadata[0].name
+  }
+
+  subject {
+    kind      = "ServiceAccount"
+    name      = "default"
+    namespace = local.helm_namespace
+  }
+
+  depends_on = [helm_release.jenkins]
+}
+
+resource "kubernetes_cluster_role_binding" "jenkins" {
   metadata {
     name      = "jenkins"
-    namespace = local.helm_namespace
   }
 
   role_ref {
@@ -123,6 +160,7 @@ resource "kubernetes_role_binding" "jenkins" {
     namespace = local.helm_namespace
   }
 
+  depends_on = [helm_release.jenkins]
 }
 
 data "kubernetes_service" "jenkins" {
