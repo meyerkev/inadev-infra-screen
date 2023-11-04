@@ -86,10 +86,9 @@ resource "helm_release" "jenkins" {
     value = var.jenkins_image
   }
 
-  # Productionization: Proper tagging
   set {
-    name = "controller.tag"
-    value = "latest"
+    name = "controller.tag" 
+    value = var.jenkins_tag
   }
 
   wait = true

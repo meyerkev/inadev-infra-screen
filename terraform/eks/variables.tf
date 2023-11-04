@@ -36,3 +36,7 @@ variable "key_pair_name_prefix" {
 variable "jenkins_image" {
   type = string
 }
+
+variable "jenkins_tag" {
+  type = string
+}

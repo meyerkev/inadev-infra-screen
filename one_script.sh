@@ -18,6 +18,8 @@ if [[ -z ${GITHUB_REPOSITORY_URL} ]]; then
     GITHUB_REPOSITORY_URL=https://github.com/meyerkev/inadev-infra-screen.git
 fi
 
+DOCKER_TAG=$(date +%s)
+
 set -u
 
 cd $(dirname $0)
@@ -33,15 +35,17 @@ terraform apply -auto-approve
 
 # Build the app image
 APP_IMAGE=$(terraform output -json | jq -r .repository_url.value.weather)
+APP_TAG=${APP_IMAGE}:${DOCKER_TAG}
 aws ecr get-login-password --region us-east-2 | docker login --username AWS --password-stdin ${APP_IMAGE}
-docker tag weather-app:latest $APP_IMAGE
-docker push $APP_IMAGE
+docker tag weather-app $APP_TAG
+docker push $APP_TAG
 
 # Build the Jenkins image
 JENKINS_IMAGE=$(terraform output -json | jq -r .repository_url.value.jenkins)
+JENKINS_TAG=${JENKINS_IMAGE}:${DOCKER_TAG}
 aws ecr get-login-password --region us-east-2 | docker login --username AWS --password-stdin ${JENKINS_IMAGE}
-docker tag custom-jenkins:latest $JENKINS_IMAGE
-docker push $JENKINS_IMAGE
+docker tag custom-jenkins $JENKINS_TAG
+docker push $JENKINS_TAG
 
 popd
 
@@ -50,7 +54,7 @@ popd
 
 pushd terraform/eks
 terraform init
-terraform apply -auto-approve -var "jenkins_image=$JENKINS_IMAGE" -var-file=tfvars/inadev.tfvars
+terraform apply -auto-approve -var "jenkins_image=${JENKINS_IMAGE}" -var "jenkins_tag=${DOCKER_TAG}" -var-file=tfvars/inadev.tfvars
 
 # aws eks --region us-east-2 update-kubeconfig --name inadev-kmeyer
 KUBECONFIG_COMMAND=`terraform output -raw update_kubeconfig`
@@ -79,7 +83,7 @@ echo "Jenkins is up at $JENKINS_ENDPOINT"
 echo "Image is at $APP_IMAGE"
 echo docker run -e JENKINS_ENDPOINT="$JENKINS_ENDPOINT" -e JENKINS_USERNAME="$JENKINS_USERNAME" -e JENKINS_PASSWORD="$JENKINS_PASSWORD" -e GITHUB_AUTH_TOKEN="$GITHUB_AUTH_TOKEN" -e GITHUB_REPOSITORY_URL="$GITHUB_REPOSITORY_URL" -e APP_IMAGE="$APP_IMAGE" -it jenkins-setup bash
 # Q: Does it make sense to kill the setup container?
-# A: Not while debugging, it doesn't.   
+# A: Not while debugging, it doesn't.
 # docker image rm jenkins-setup
 
 
