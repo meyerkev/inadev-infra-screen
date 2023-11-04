@@ -56,7 +56,7 @@ module "key_pair" {
 #
 # So it's a module now.  
 module "eks" {
-    source = "./modules/eks"
+    source = "../modules/eks"
     aws_region = var.aws_region
     cluster_name = var.cluster_name
     vpc_id = module.vpc.vpc_id
@@ -65,10 +65,6 @@ module "eks" {
     vpc_subnets = module.vpc.public_subnets
 
     eks_key_pair_name = var.create_key_pair ? module.key_pair.key_pair_name : var.key_pair_name
-}
-
-resource "aws_ecr_repository" "weather" {
-  name = "weather"
 }
 
 # install jenkins
@@ -81,15 +77,23 @@ resource "helm_release" "jenkins" {
 
   create_namespace = true
 
-  set {
-    name  = "controller.serviceType"
-    value = "LoadBalancer"
-  }
+  values = [
+    file("${path.module}/jenkins-values.yaml")
+  ]
 
   set {
-    name  = "controller.servicePort"
-    value = "80"
+    name = "controller.image" 
+    value = var.jenkins_image
   }
+
+  # Productionization: Proper tagging
+  set {
+    name = "controller.tag"
+    value = "latest"
+  }
+
+  wait = true
+  wait_for_jobs = true
 }
 
 data "kubernetes_service" "jenkins" {

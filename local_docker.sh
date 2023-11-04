@@ -18,5 +18,5 @@ fi
 
 set -u
 
-docker build --build-arg OPENWEATHERMAP_API_KEY=$OPENWEATHERMAP_API_KEY -t weather-app -f src/DOCKERFILE src
+docker build --build-arg OPENWEATHERMAP_API_KEY=$OPENWEATHERMAP_API_KEY -t weather-app -f src/app/DOCKERFILE src
 docker run -p 5000:5000 weather-app
