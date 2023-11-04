@@ -10,7 +10,7 @@ pipeline {
     stages {
         stage('Checkout') {
             steps {
-                git branch: "${BRANCH_NAME}", url: "${scm.userRemoteConfigs[0].url}"
+                checkout scm
             }
         }
         stage('Deploy Helm Chart') {
