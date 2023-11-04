@@ -83,12 +83,12 @@ resource "helm_release" "jenkins" {
 
   set {
     name = "controller.image" 
-    value = var.jenkins_image
+    value = "jenkins/jenkins"  # var.jenkins_image""
   }
 
   set {
     name = "controller.tag" 
-    value = var.jenkins_tag
+    value = "2.430-jdk17"  # var.jenkins_tag
   }
 
   wait = true

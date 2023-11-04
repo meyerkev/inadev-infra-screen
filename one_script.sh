@@ -40,13 +40,6 @@ aws ecr get-login-password --region us-east-2 | docker login --username AWS --pa
 docker tag weather-app $APP_TAG
 docker push $APP_TAG
 
-# Build the Jenkins image
-JENKINS_IMAGE=$(terraform output -json | jq -r .repository_url.value.jenkins)
-JENKINS_TAG=${JENKINS_IMAGE}:${DOCKER_TAG}
-aws ecr get-login-password --region us-east-2 | docker login --username AWS --password-stdin ${JENKINS_IMAGE}
-docker tag custom-jenkins $JENKINS_TAG
-docker push $JENKINS_TAG
-
 popd
 
 # Push all the terraform
@@ -54,7 +47,7 @@ popd
 
 pushd terraform/eks
 terraform init
-terraform apply -auto-approve -var "jenkins_image=${JENKINS_IMAGE}" -var "jenkins_tag=${DOCKER_TAG}" -var-file=tfvars/inadev.tfvars
+terraform apply -auto-approve -var-file=tfvars/inadev.tfvars
 
 # aws eks --region us-east-2 update-kubeconfig --name inadev-kmeyer
 KUBECONFIG_COMMAND=`terraform output -raw update_kubeconfig`

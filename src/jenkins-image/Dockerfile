@@ -11,5 +11,3 @@ RUN apt-get update && apt-get install -y docker-ce-cli
 WORKDIR /var/jenkins_home
 USER jenkins
 COPY . ./
-RUN jenkins-plugin-cli -f plugins.txt --latest \
-    && ./jenkins_update_plugins.sh
