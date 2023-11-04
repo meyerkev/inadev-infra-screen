@@ -1,14 +1,20 @@
-import jenkins
+"""
+Make or update a Jenkins project and GitHub webhook for a 
+given GitHub repository, then run the build
+"""
 import os
-from github import Auth, Github
+import jenkins
+from github import Auth, Github, GithubException
 
 # GitHub credentials
 GITHUB_AUTH_TOKEN = os.environ.get("GITHUB_AUTH_TOKEN")
 if not GITHUB_AUTH_TOKEN:
-    raise Exception("GITHUB_AUTH_TOKEN environment variable must be set.")
+    raise ValueError("GITHUB_AUTH_TOKEN environment variable must be set.")
 GITHUB_REPOSITORY_URL = os.environ.get("GITHUB_REPOSITORY_URL")
-if not GITHUB_REPOSITORY_URL or not  "github.com" in GITHUB_REPOSITORY_URL:
-    raise Exception("GITHUB_REPOSITORY environment variable must be set to a fully qualified github.com URL.")
+if not GITHUB_REPOSITORY_URL or not "github.com" in GITHUB_REPOSITORY_URL:
+    raise ValueError(
+        "GITHUB_REPOSITORY environment variable must be set to a fully "
+        "qualified github.com URL.")
 
 # Strip it down to just the owner/repo
 GITHUB_REPOSITORY = GITHUB_REPOSITORY_URL.split("github.com/")[-1]
@@ -21,18 +27,21 @@ JENKINS_ENDPOINT = os.environ.get("JENKINS_ENDPOINT")
 JENKINS_USERNAME = os.environ.get("JENKINS_USERNAME")
 JENKINS_PASSWORD = os.environ.get("JENKINS_PASSWORD")
 
+
 def setup_github_webhook():
+    """
+    Set up a GitHub webhook for the given repository
+    """
     auth = Auth.Token(GITHUB_AUTH_TOKEN)
 
     # First create a Github instance:
 
     # Public Web Github
     g = Github(auth=auth)
-    
+
     webhook_url = f"{JENKINS_ENDPOINT}/github-webhook/"
 
     webhook_events = ["push", "pull_request"]
-
 
     # Get the repository
     repo = g.get_repo(GITHUB_REPOSITORY)
@@ -41,22 +50,33 @@ def setup_github_webhook():
     # sort of kind of idempotent, sure
     try:
         # This name seems to be required to be "web" for some reason
-        repo.create_hook("web", {"url": webhook_url, "content_type": "json"}, webhook_events, active=True)
-    except Exception as e:
+        repo.create_hook(
+            "web", {"url": webhook_url, "content_type": "json"}, webhook_events, active=True)
+    except GithubException as e:
         if "Hook already exists on this repository" in str(e):
             hooks = repo.get_hooks()
             for hook in hooks:
                 if hook.config["url"] == webhook_url:
-                    hook.edit(name = hook.name, config={"url": webhook_url, "content_type": "json"}, events=webhook_events, active=True)
+                    hook.edit(name=hook.name, config={
+                              "url": webhook_url, 
+                              "content_type": "json"}, 
+                              events=webhook_events,
+                              active=True)
             return
-        
-        print(f"Failed to create webhook for {GITHUB_REPOSITORY} on url {webhook_url}.")
+
+        print(
+            f"Failed to create webhook for {GITHUB_REPOSITORY} on url {webhook_url}.")
         print(e)
         raise e
 
+
 def setup_jenkins_project():
+    """
+    Set up a Jenkins project for the given repository, and build it
+    """
     # Initialize the Jenkins server connection
-    server = jenkins.Jenkins(JENKINS_ENDPOINT, username=JENKINS_USERNAME, password=JENKINS_PASSWORD)
+    server = jenkins.Jenkins(
+        JENKINS_ENDPOINT, username=JENKINS_USERNAME, password=JENKINS_PASSWORD)
 
     # TODO: Make all these names into parameters as well
     # Create a new Jenkins folder
@@ -70,7 +90,7 @@ def setup_jenkins_project():
             print(f"Failed to create Jenkins folder '{folder_name}'.")
             print(f"Original exception: {original_exception}")
             print(f"Assert exception: {assert_exception}")
-            raise original_exception
+            raise original_exception from assert_exception
 
     # Do not ask how long it took me to figure out that .strip() was needed here
     project_config = (f"""
@@ -128,7 +148,13 @@ def setup_jenkins_project():
     # Create a new Jenkins project
     server.upsert_job(project_name, project_config)
 
+    # Build the project just to say we did
+    server.build_job(project_name)
+
+
 def main():
+    """
+    Main function"""
     setup_jenkins_project()
     setup_github_webhook()
 

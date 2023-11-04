@@ -34,9 +34,9 @@ variable "key_pair_name_prefix" {
 }
 
 variable "jenkins_agent_image" {
-  type    = string
+  type = string
 }
 
 variable "jenkins_agent_tag" {
-  type    = string
+  type = string
 }

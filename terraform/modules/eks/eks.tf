@@ -42,10 +42,10 @@ module "eks" {
 
   cluster_endpoint_public_access = true
   create_iam_role                = true
-  iam_role_additional_policies = { AmazonEBSCSIDriverPolicy = "arn:aws:iam::aws:policy/service-role/AmazonEBSCSIDriverPolicy" }
+  iam_role_additional_policies   = { AmazonEBSCSIDriverPolicy = "arn:aws:iam::aws:policy/service-role/AmazonEBSCSIDriverPolicy" }
 
   manage_aws_auth_configmap = true
-  
+
   # For some reason, my IAM user I'm using to build didn't get added to my cluster.  
   aws_auth_users = local.add_user ? [
     {
@@ -69,16 +69,16 @@ module "eks" {
 
   }
 
-  vpc_id = var.vpc_id
+  vpc_id     = var.vpc_id
   subnet_ids = var.vpc_subnets
 
   eks_managed_node_group_defaults = {
     # I make exactly zero promises that this is complete, but basically pick an instance type that matches your architecture
     # I would love to have some weird locals thingy that figures out if you're ARM or x64 or whatever, but I'm not sure how to do that
     # Known valid strings (I tested them on my laptop) are: arm64, x86_64
-    ami_type                   = contains(data.aws_ec2_instance_type.eks_node_instance_type.supported_architectures, "arm64") ? "AL2_ARM_64" : "AL2_x86_64"
-    instance_types             = [local.eks_node_instance_type]
-    iam_role_attach_cni_policy = true
+    ami_type                     = contains(data.aws_ec2_instance_type.eks_node_instance_type.supported_architectures, "arm64") ? "AL2_ARM_64" : "AL2_x86_64"
+    instance_types               = [local.eks_node_instance_type]
+    iam_role_attach_cni_policy   = true
     iam_role_additional_policies = { AmazonEBSCSIDriverPolicy = "arn:aws:iam::aws:policy/service-role/AmazonEBSCSIDriverPolicy" }
   }
 
@@ -100,7 +100,7 @@ module "eks" {
         source_security_group_ids = [aws_security_group.remote_access.id]
       }
     }
-    
+
   }
   cluster_security_group_additional_rules = {
     eks_cluster = {

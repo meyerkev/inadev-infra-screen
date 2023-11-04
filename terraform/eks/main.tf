@@ -2,6 +2,8 @@ locals {
   # This will not work for all instance types just for the record
   # There's a hack on it, but I forget what it is
   availability_zones = ["${var.aws_region}a", "${var.aws_region}b", "${var.aws_region}c"]
+
+  # tflint-ignore: terraform_unused_declarations
   validate_key_pair = var.create_key_pair || var.key_pair_name != null ? "Please provide a keypair or create one" : true
 
   helm_namespace = "jenkins"
@@ -43,7 +45,7 @@ module "vpc" {
 }
 
 module "key_pair" {
-  create = var.create_key_pair
+  create  = var.create_key_pair
   source  = "terraform-aws-modules/key-pair/aws"
   version = "~> 2.0"
 
@@ -56,28 +58,28 @@ module "key_pair" {
 #
 # So it's a module now.  
 module "eks" {
-    source = "../modules/eks"
-    aws_region = var.aws_region
-    cluster_name = var.cluster_name
-    vpc_id = module.vpc.vpc_id
+  source       = "../modules/eks"
+  aws_region   = var.aws_region
+  cluster_name = var.cluster_name
+  vpc_id       = module.vpc.vpc_id
 
-    # TODO: Flip to private subnets and add a jump box for SSH
-    vpc_subnets = module.vpc.public_subnets
+  # TODO: Flip to private subnets and add a jump box for SSH
+  vpc_subnets = module.vpc.public_subnets
 
-    eks_key_pair_name = var.create_key_pair ? module.key_pair.key_pair_name : var.key_pair_name
+  eks_key_pair_name = var.create_key_pair ? module.key_pair.key_pair_name : var.key_pair_name
 
-    # TODO: Make some of these install scripts architecture agnostic
-    # Until then, force x86_64
-    target_architecture = "x86_64"
+  # TODO: Make some of these install scripts architecture agnostic
+  # Until then, force x86_64
+  target_architecture = "x86_64"
 }
 
 # install jenkins
 resource "helm_release" "jenkins" {
-  name      = "jenkins"
+  name       = "jenkins"
   repository = "https://charts.jenkins.io"
-  chart     = "jenkins"
-  namespace = local.helm_namespace
-  version   = "4.8.2"
+  chart      = "jenkins"
+  namespace  = local.helm_namespace
+  version    = "4.8.2"
 
   create_namespace = true
 
@@ -86,26 +88,26 @@ resource "helm_release" "jenkins" {
   ]
 
   set {
-    name = "controller.image" 
-    value = "jenkins/jenkins"  # var.jenkins_image""
+    name  = "controller.image"
+    value = "jenkins/jenkins" # var.jenkins_image""
   }
 
   set {
-    name = "controller.tag" 
-    value = "2.430-jdk17"  # var.jenkins_tag
+    name  = "controller.tag"
+    value = "2.430-jdk17" # var.jenkins_tag
   }
 
   set {
-    name = "agent.image"
+    name  = "agent.image"
     value = var.jenkins_agent_image
   }
 
   set {
-    name = "agent.tag"
+    name  = "agent.tag"
     value = var.jenkins_agent_tag
   }
-  
-  wait = true
+
+  wait          = true
   wait_for_jobs = true
 }
 
@@ -115,9 +117,9 @@ resource "helm_release" "jenkins" {
 # Specifically, the default jenkins serviceaccount is called default and now it has cluster-admin and can do whatever it wants
 # Like say locally install a helm chart into the cluster that it's installed on
 # namespaces is forbidden: User "system:serviceaccount:jenkins:default" cannot create resource "namespaces" in API group "" at the cluster scope
-resource "kubernetes_cluster_role" "create_namespaces"{
+resource "kubernetes_cluster_role" "create_namespaces" {
   metadata {
-    name      = "create-namespaces"
+    name = "create-namespaces"
   }
 
   rule {
@@ -129,7 +131,7 @@ resource "kubernetes_cluster_role" "create_namespaces"{
 
 resource "kubernetes_cluster_role_binding" "create_namespaces" {
   metadata {
-    name      = "create-namespaces"
+    name = "create-namespaces"
   }
 
   role_ref {
@@ -149,7 +151,7 @@ resource "kubernetes_cluster_role_binding" "create_namespaces" {
 
 resource "kubernetes_cluster_role_binding" "jenkins" {
   metadata {
-    name      = "jenkins"
+    name = "jenkins"
   }
 
   role_ref {

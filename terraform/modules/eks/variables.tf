@@ -1,9 +1,9 @@
 variable "aws_region" {
-  type    = string
+  type = string
 }
 
 variable "cluster_name" {
-  type    = string
+  type = string
 }
 
 variable "cluster_k8s_version" {
@@ -13,7 +13,7 @@ variable "cluster_k8s_version" {
 
 variable "eks_node_instance_type" {
   type    = string
-  default = null  # "m6g.large"
+  default = null # "m6g.large"
 }
 
 variable "target_architecture" {
@@ -37,11 +37,11 @@ variable "desired_nodes" {
 }
 
 variable "vpc_id" {
-  type    = string
+  type = string
 }
 
 variable "vpc_subnets" {
-  type    = list(string)
+  type = list(string)
 }
 
 variable "eks_key_pair_name" {
