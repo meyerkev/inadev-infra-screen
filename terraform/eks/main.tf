@@ -83,17 +83,84 @@ resource "helm_release" "jenkins" {
 
   set {
     name = "controller.image" 
-    value = var.jenkins_image
+    value = "jenkins/jenkins"  # var.jenkins_image""
   }
 
-  # Productionization: Proper tagging
   set {
-    name = "controller.tag"
-    value = "latest"
+    name = "controller.tag" 
+    value = "2.430-jdk17"  # var.jenkins_tag
   }
 
+  set {
+    name = "agent.image"
+    value = var.jenkins_agent_image
+  }
+
+  set {
+    name = "agent.tag"
+    value = var.jenkins_agent_tag
+  }
+  
   wait = true
   wait_for_jobs = true
+}
+
+# Everything about this is actually terrifying.  
+# But I was having so many hours upon hours of problems with plugin versions that adding more plugins to the mix was just not an option
+# So basically, we're doing a hack
+# Specifically, the default jenkins serviceaccount is called default and now it has cluster-admin and can do whatever it wants
+# Like say locally install a helm chart into the cluster that it's installed on
+# namespaces is forbidden: User "system:serviceaccount:jenkins:default" cannot create resource "namespaces" in API group "" at the cluster scope
+resource "kubernetes_cluster_role" "create_namespaces"{
+  metadata {
+    name      = "create-namespaces"
+  }
+
+  rule {
+    api_groups = [""]
+    resources  = ["namespaces"]
+    verbs      = ["create"]
+  }
+}
+
+resource "kubernetes_cluster_role_binding" "create_namespaces" {
+  metadata {
+    name      = "create-namespaces"
+  }
+
+  role_ref {
+    api_group = "rbac.authorization.k8s.io"
+    kind      = "ClusterRole"
+    name      = kubernetes_cluster_role.create_namespaces.metadata[0].name
+  }
+
+  subject {
+    kind      = "ServiceAccount"
+    name      = "default"
+    namespace = local.helm_namespace
+  }
+
+  depends_on = [helm_release.jenkins]
+}
+
+resource "kubernetes_cluster_role_binding" "jenkins" {
+  metadata {
+    name      = "jenkins"
+  }
+
+  role_ref {
+    api_group = "rbac.authorization.k8s.io"
+    kind      = "ClusterRole"
+    name      = "admin"
+  }
+
+  subject {
+    kind      = "ServiceAccount"
+    name      = "default"
+    namespace = local.helm_namespace
+  }
+
+  depends_on = [helm_release.jenkins]
 }
 
 data "kubernetes_service" "jenkins" {

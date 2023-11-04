@@ -33,6 +33,10 @@ variable "key_pair_name_prefix" {
   default = "inadev-kmeyer"
 }
 
-variable "jenkins_image" {
-  type = string
+variable "jenkins_agent_image" {
+  type    = string
+}
+
+variable "jenkins_agent_tag" {
+  type    = string
 }
