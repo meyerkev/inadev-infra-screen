@@ -65,6 +65,10 @@ module "eks" {
     vpc_subnets = module.vpc.public_subnets
 
     eks_key_pair_name = var.create_key_pair ? module.key_pair.key_pair_name : var.key_pair_name
+
+    # TODO: Make some of these install scripts architecture agnostic
+    # Until then, force x86_64
+    target_architecture = "x86_64"
 }
 
 # install jenkins
