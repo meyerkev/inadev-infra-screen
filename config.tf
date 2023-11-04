@@ -49,4 +49,9 @@ provider "helm" {
       command     = "aws"
     }
   }
+
+  # This isn't allowed, which is annoying because I was hoping to use this
+  # experiments {
+  #   manifest = true
+  # }
 }
