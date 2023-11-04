@@ -26,7 +26,7 @@ cd $(dirname $0)
 
 # Make your image first so if it breaks, you're not waiting for the 45 minute long EKS cluster to build (... or fail to build)
 docker build --build-arg OPENWEATHERMAP_API_KEY=$OPENWEATHERMAP_API_KEY -t weather -f src/app/Dockerfile src/app
-docker build -t custom-jenkins -f src/jenkins-image/Dockerfile src/jenkins-image
+docker build -t custom-jenkins-agent -f src/jenkins-agent/Dockerfile src/jenkins-agent
 
 # Make the ECR repos
 pushd terraform/ecr
@@ -40,6 +40,13 @@ aws ecr get-login-password --region us-east-2 | docker login --username AWS --pa
 docker tag weather-app $APP_TAG
 docker push $APP_TAG
 
+# Build the Jenkins image
+JENKINS_IMAGE=$(terraform output -json | jq -r .repository_url.value.jenkins)
+JENKINS_TAG=${JENKINS_IMAGE}:${DOCKER_TAG}
+aws ecr get-login-password --region us-east-2 | docker login --username AWS --password-stdin ${JENKINS_IMAGE}
+docker tag custom-jenkins-agent $JENKINS_TAG
+docker push $JENKINS_TAG
+
 popd
 
 # Push all the terraform
@@ -47,7 +54,7 @@ popd
 
 pushd terraform/eks
 terraform init
-terraform apply -auto-approve -var-file=tfvars/inadev.tfvars
+terraform apply -auto-approve -var-file=tfvars/inadev.tfvars -var "jenkins_agent_image=$JENKINS_IMAGE" -var "jenkins_agent_tag=$DOCKER_TAG"
 
 # aws eks --region us-east-2 update-kubeconfig --name inadev-kmeyer
 KUBECONFIG_COMMAND=`terraform output -raw update_kubeconfig`

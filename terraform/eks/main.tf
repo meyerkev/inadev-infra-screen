@@ -91,6 +91,16 @@ resource "helm_release" "jenkins" {
     value = "2.430-jdk17"  # var.jenkins_tag
   }
 
+  set {
+    name = "agent.image"
+    value = var.jenkins_agent_image
+  }
+
+  set {
+    name = "agent.tag"
+    value = var.jenkins_agent_tag
+  }
+  
   wait = true
   wait_for_jobs = true
 }
