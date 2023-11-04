@@ -1,4 +1,3 @@
-// Install Helm, then run the Helm chart
 pipeline {
     agent any
 
@@ -9,6 +8,11 @@ pipeline {
     }
 
     stages {
+        stage('Checkout') {
+            steps {
+                git branch: "${BRANCH_NAME}", url: "${scm.userRemoteConfigs[0].url}"
+            }
+        }
         stage('Deploy Helm Chart') {
             steps {
                 script {
