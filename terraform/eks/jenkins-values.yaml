@@ -1,0 +1,11 @@
+controller:
+  servicePort: 80
+  serviceType: LoadBalancer
+
+  installLatestPlugins: true
+  installLatestSpecifiedPlugins: true
+
+  # The one weakness of Helm charts is that I have to actually maintain these 
+  # because the git plugin needs to be updated to support the latest version of git
+  additionalPlugins: []
+  # Github:1.37.3.1
