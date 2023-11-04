@@ -72,21 +72,61 @@ def setup_jenkins_project():
             print(f"Assert exception: {assert_exception}")
             raise original_exception
 
-    project_name = "inadev-kmeyer/inadev-kmeyer-configured"
+    # Do not ask how long it took me to figure out that .strip() was needed here
+    project_config = (f"""
+<?xml version='1.1' encoding='UTF-8'?>
+<flow-definition plugin="workflow-job@1360.vc6700e3136f5">
+  <actions>
+    <org.jenkinsci.plugins.pipeline.modeldefinition.actions.DeclarativeJobAction plugin="pipeline-model-definition@1.9.3"/>
+    <org.jenkinsci.plugins.pipeline.modeldefinition.actions.DeclarativeJobPropertyTrackerAction plugin="pipeline-model-definition@1.9.3">
+      <jobProperties/>
+      <triggers/>
+      <parameters/>
+      <options/>
+    </org.jenkinsci.plugins.pipeline.modeldefinition.actions.DeclarativeJobPropertyTrackerAction>
+  </actions>
+  <description></description>
+  <keepDependencies>false</keepDependencies>
+  <properties>
+    <com.coravy.hudson.plugins.github.GithubProjectProperty plugin="github@1.37.3.1">
+      <projectUrl>{GITHUB_REPOSITORY_URL}</projectUrl>
+      <displayName></displayName>
+    </com.coravy.hudson.plugins.github.GithubProjectProperty>
+    <org.jenkinsci.plugins.workflow.job.properties.PipelineTriggersJobProperty>
+      <triggers>
+        <com.cloudbees.jenkins.GitHubPushTrigger plugin="github@1.37.3.1">
+          <spec></spec>
+        </com.cloudbees.jenkins.GitHubPushTrigger>
+      </triggers>
+    </org.jenkinsci.plugins.workflow.job.properties.PipelineTriggersJobProperty>
+  </properties>
+  <definition class="org.jenkinsci.plugins.workflow.cps.CpsScmFlowDefinition" plugin="workflow-cps@3806.va_3a_6988277b_2">
+    <scm class="hudson.plugins.git.GitSCM" plugin="git@5.2.0">
+      <configVersion>2</configVersion>
+      <userRemoteConfigs>
+        <hudson.plugins.git.UserRemoteConfig>
+          <url>{GITHUB_REPOSITORY_URL}</url>
+        </hudson.plugins.git.UserRemoteConfig>
+      </userRemoteConfigs>
+      <branches>
+        <hudson.plugins.git.BranchSpec>
+          <name>main</name>
+        </hudson.plugins.git.BranchSpec>
+      </branches>
+      <doGenerateSubmoduleConfigurations>false</doGenerateSubmoduleConfigurations>
+      <submoduleCfg class="empty-list"/>
+      <extensions/>
+    </scm>
+    <scriptPath>Jenkinsfile</scriptPath>
+    <lightweight>true</lightweight>
+  </definition>
+  <triggers/>
+  <disabled>false</disabled>
+</flow-definition>
+""").strip()
+    project_name = f"{folder_name}/inadev-pipeline"
     # Create a new Jenkins project
-    try:
-        server.create_job(project_name, jenkins.EMPTY_CONFIG_XML)
-    except jenkins.JenkinsException as original_exception:
-        try:
-            server.assert_job(project_name)
-        except jenkins.JenkinsException as assert_exception:
-            print(f"Failed to create Jenkins project '{project_name}'.")
-            print(f"Original exception: {original_exception}")
-            print(f"Assert exception: {assert_exception}")
-            raise original_exception
-
-    
-
+    server.upsert_job(project_name, project_config)
 
 def main():
     setup_jenkins_project()
