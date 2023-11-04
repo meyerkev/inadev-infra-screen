@@ -112,6 +112,9 @@ def setup_jenkins_project():
         <hudson.plugins.git.BranchSpec>
           <name>main</name>
         </hudson.plugins.git.BranchSpec>
+        <hudson.plugins.git.BranchSpec>
+          <name>test*</name>
+        </hudson.plugins.git.BranchSpec>
       </branches>
       <doGenerateSubmoduleConfigurations>false</doGenerateSubmoduleConfigurations>
       <submoduleCfg class="empty-list"/>
