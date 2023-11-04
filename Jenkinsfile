@@ -9,12 +9,6 @@ pipeline {
     }
 
     stages {
-
-        stage('sleep for debugging') {
-            steps {
-                sleep 3600
-            }
-        }
         stage('Install Helm') {
             steps {
                 script {
