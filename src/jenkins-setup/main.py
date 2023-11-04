@@ -128,6 +128,9 @@ def setup_jenkins_project():
     # Create a new Jenkins project
     server.upsert_job(project_name, project_config)
 
+    # Build the project just to say we did
+    server.build_job(project_name)
+
 def main():
     setup_jenkins_project()
     setup_github_webhook()

@@ -76,14 +76,23 @@ JENKINS_PASSWORD=$(terraform output -raw jenkins_password)
 popd
 
 docker build -t jenkins-setup -f src/jenkins-setup/Dockerfile src/jenkins-setup
-set +e
-docker run -e JENKINS_ENDPOINT="$JENKINS_ENDPOINT" -e JENKINS_USERNAME="$JENKINS_USERNAME" -e JENKINS_PASSWORD="$JENKINS_PASSWORD" -e GITHUB_AUTH_TOKEN="$GITHUB_AUTH_TOKEN" -e GITHUB_REPOSITORY_URL="$GITHUB_REPOSITORY_URL" -e APP_IMAGE="$APP_IMAGE" jenkins-setup
+
+#TODO: Send in the branch as a variable so our job uses the latest code for the branch
+docker run \
+    -e JENKINS_ENDPOINT="$JENKINS_ENDPOINT" \
+    -e JENKINS_USERNAME="$JENKINS_USERNAME" \
+    -e JENKINS_PASSWORD="$JENKINS_PASSWORD" \
+    -e GITHUB_AUTH_TOKEN="$GITHUB_AUTH_TOKEN" \
+    -e GITHUB_REPOSITORY_URL="$GITHUB_REPOSITORY_URL" \
+    -e APP_IMAGE="$APP_IMAGE" jenkins-setup
 
 echo "Jenkins is up at $JENKINS_ENDPOINT"
-echo "Image is at $APP_IMAGE"
-echo docker run -e JENKINS_ENDPOINT="$JENKINS_ENDPOINT" -e JENKINS_USERNAME="$JENKINS_USERNAME" -e JENKINS_PASSWORD="$JENKINS_PASSWORD" -e GITHUB_AUTH_TOKEN="$GITHUB_AUTH_TOKEN" -e GITHUB_REPOSITORY_URL="$GITHUB_REPOSITORY_URL" -e APP_IMAGE="$APP_IMAGE" -it jenkins-setup bash
+echo "Username: $JENKINS_USERNAME"
+echo "Password: $JENKINS_PASSWORD"
 # Q: Does it make sense to kill the setup container?
 # A: Not while debugging, it doesn't.
 # docker image rm jenkins-setup
 
+export SERVICE_IP=$(kubectl get svc --namespace inadev-kmeyer inadev-kmeyer --template "{{ range (index .status.loadBalancer.ingress 0) }}{{.}}{{ end }}")
+echo "Your service can be found at: http://$SERVICE_IP"
 
