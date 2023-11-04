@@ -14,4 +14,9 @@ RUN curl -LO https://storage.googleapis.com/kubernetes-release/release/${KUBECTL
     chmod +x ./kubectl && \
     mv ./kubectl /usr/local/bin/kubectl
 
+# Get AWS CLI
+RUN apt install -y python3-pip && \
+    pip3 install awscli --upgrade --user && \
+    ln -s /root/.local/bin/aws /usr/local/bin/aws
+
 USER jenkins

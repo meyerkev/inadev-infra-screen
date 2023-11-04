@@ -18,6 +18,7 @@ pipeline {
                 script {
                     // Install the Helm chart
                     sh "pwd && ls -la"
+                    sh "sleep 3600"
                     sh "helm upgrade --install ${CHART_NAME} ./helm/inadev-kmeyer --namespace=${NAMESPACE} --create-namespace --atomic --timeout=5m --wait"
                 }
             }
