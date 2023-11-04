@@ -9,21 +9,11 @@ pipeline {
     }
 
     stages {
-        stage('Install Helm') {
-            steps {
-                script {
-                    // Download and install Helm
-                    sh "curl -sSL https://get.helm.sh/helm-v${HELM_VERSION}-linux-amd64.tar.gz | tar xz"
-                    sh "mv linux-amd64/helm /usr/local/bin/"
-                    sh "helm version --client"
-                }
-            }
-        }
-
         stage('Deploy Helm Chart') {
             steps {
                 script {
                     // Install the Helm chart
+                    sh "pwd && ls -la"
                     sh "helm upgrade --install ${CHART_NAME} ./helm/inadev-kmeyer --namespace=${NAMESPACE} --create-namespace --atomic --timeout=5m --wait"
                 }
             }
