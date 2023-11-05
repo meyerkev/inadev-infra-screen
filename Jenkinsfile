@@ -18,6 +18,7 @@ pipeline {
                 script {
                     // Build the Docker image
                     sh "docker version"
+                    sh "sleep 3600"
                 }
             }
         }

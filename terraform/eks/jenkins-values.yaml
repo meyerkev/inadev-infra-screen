@@ -1,3 +1,12 @@
+agent:
+  privileged: true
+  volumes: 
+  volumes:
+    - name: docker-sock
+      hostPath: /var/run/docker.sock
+      mountPath: /var/run/docker.sock
+      readOnly: false
+
 controller:
   servicePort: 80
   serviceType: LoadBalancer
