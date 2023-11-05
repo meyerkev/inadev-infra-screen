@@ -13,6 +13,14 @@ pipeline {
                 checkout scm
             }
         }
+        stage('Build Docker') {
+            steps {
+                script {
+                    // Build the Docker image
+                    sh "docker version"
+                }
+            }
+        }
         stage('Deploy Helm Chart') {
             steps {
                 script {
