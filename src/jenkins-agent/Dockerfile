@@ -40,7 +40,12 @@ RUN apt install -y \
     tee /etc/apt/sources.list.d/docker.list > /dev/null \
     && apt update \
     && apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin \
-    && groupadd -f docker \
-    && usermod -aG docker jenkins
+    && groupadd -f docker
+
+COPY fix_socket.sh /usr/local/bin/fix_socket.sh
+
+RUN chmod +x /usr/local/bin/fix_socket.sh && chmod u+s /usr/local/bin/fix_socket.sh
+
+ENTRYPOINT [  ]
 
 USER jenkins

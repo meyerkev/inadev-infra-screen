@@ -1,10 +1,10 @@
 agent:
   privileged: true
-  volumes: 
   volumes:
-    - name: docker-sock
+    - type: HostPath
       hostPath: /var/run/docker.sock
       mountPath: /var/run/docker.sock
+      mode: 777
       readOnly: false
 
 controller:
