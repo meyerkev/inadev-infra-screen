@@ -18,11 +18,13 @@ if [[ -z ${GITHUB_REPOSITORY_URL} ]]; then
     GITHUB_REPOSITORY_URL=https://github.com/meyerkev/inadev-infra-screen.git
 fi
 
-DOCKER_TAG=$(date +%s)
-
 set -u
 
 cd $(dirname $0)
+
+# Setup the environment
+DOCKER_TAG=$(date +%s)
+GIT_BRANCH=$(git branch --show-current)
 
 echo "Building docker images"
 
@@ -86,6 +88,8 @@ popd
 
 echo "Jenkins is up; Configuring Jenkins"
 
+
+
 docker build -t jenkins-setup -f src/jenkins-setup/Dockerfile src/jenkins-setup
 
 #TODO: Send in the branch as a variable so our job uses the latest code for the branch
@@ -95,7 +99,9 @@ docker run \
     -e JENKINS_PASSWORD="$JENKINS_PASSWORD" \
     -e GITHUB_AUTH_TOKEN="$GITHUB_AUTH_TOKEN" \
     -e GITHUB_REPOSITORY_URL="$GITHUB_REPOSITORY_URL" \
-    -e APP_IMAGE="$APP_IMAGE" jenkins-setup
+    -e APP_IMAGE="$APP_IMAGE" \
+    -e GIT_BRANCH="$GIT_BRANCH" \
+    jenkins-setup
 
 echo docker run -e JENKINS_ENDPOINT="$JENKINS_ENDPOINT" -e JENKINS_USERNAME="$JENKINS_USERNAME" -e JENKINS_PASSWORD="$JENKINS_PASSWORD" -e GITHUB_AUTH_TOKEN="$GITHUB_AUTH_TOKEN" -e GITHUB_REPOSITORY_URL="$GITHUB_REPOSITORY_URL" -e APP_IMAGE="$APP_IMAGE" -it jenkins-setup bash
 # Q: Does it make sense to kill the setup container?
