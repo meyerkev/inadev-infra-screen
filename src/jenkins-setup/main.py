@@ -24,6 +24,8 @@ if GITHUB_REPOSITORY.endswith("/"):
 if not GITHUB_REPOSITORY_URL.endswith("/"):
     GITHUB_REPOSITORY_URL = GITHUB_REPOSITORY_URL + "/"
 
+GIT_BRANCH = os.environ.get("GIT_BRANCH", "main")
+
 # Jenkins credentials
 JENKINS_ENDPOINT = os.environ.get("JENKINS_ENDPOINT")
 JENKINS_USERNAME = os.environ.get("JENKINS_USERNAME")
@@ -132,7 +134,7 @@ def setup_jenkins_project():
       </userRemoteConfigs>
       <branches>
         <hudson.plugins.git.BranchSpec>
-          <name>main</name>
+          <name>{GIT_BRANCH}</name>
         </hudson.plugins.git.BranchSpec>
       </branches>
       <doGenerateSubmoduleConfigurations>false</doGenerateSubmoduleConfigurations>
