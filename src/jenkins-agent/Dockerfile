@@ -2,7 +2,7 @@ FROM jenkins/inbound-agent
 
 # whoami == jenkins.  Come back to that
 USER root
-RUN apt update && apt upgrade -y
+RUN apt update && apt upgrade -y && apt install jq curl -y
 
 # Install helm
 RUN curl https://raw.githubusercontent.com/helm/helm/master/scripts/get-helm-3 | bash && helm version --client
@@ -41,6 +41,7 @@ RUN apt install -y \
     && apt update \
     && apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin \
     && groupadd -f docker \
-    && usermod -aG docker jenkins
+    && usermod -aG docker jenkins  
+
 
 USER jenkins

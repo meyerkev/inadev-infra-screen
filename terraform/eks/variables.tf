@@ -40,3 +40,8 @@ variable "jenkins_agent_image" {
 variable "jenkins_agent_tag" {
   type = string
 }
+
+variable "openweathermap_api_key" {
+  type = string
+  default = ""
+}

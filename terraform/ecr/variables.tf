@@ -7,3 +7,8 @@ variable "ecr_repository_names" {
   type    = list(string)
   default = ["weather", "jenkins"]
 }
+
+variable "force_delete_ecr_repositories" {
+  type    = bool
+  default = false
+}

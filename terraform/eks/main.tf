@@ -7,6 +7,7 @@ locals {
   validate_key_pair = var.create_key_pair || var.key_pair_name != null ? "Please provide a keypair or create one" : true
 
   helm_namespace = "jenkins"
+  kubernetes_service_account_name = "jenkins"
 }
 
 module "vpc" {
@@ -71,6 +72,10 @@ module "eks" {
   # TODO: Make some of these install scripts architecture agnostic
   # Until then, force x86_64
   target_architecture = "x86_64"
+
+  node_group_iam_role_additional_policies = {
+    AmazonECRPush = aws_iam_policy.jenkins_ecr.arn
+  }
 }
 
 # install jenkins
@@ -107,8 +112,15 @@ resource "helm_release" "jenkins" {
     value = var.jenkins_agent_tag
   }
 
+  set {
+    name = "serviceAccountAgent.name"
+    value = local.kubernetes_service_account_name
+  }
+
   wait          = true
   wait_for_jobs = true
+
+  depends_on = [ module.eks ]
 }
 
 # Everything about this is actually terrifying.  
@@ -116,7 +128,7 @@ resource "helm_release" "jenkins" {
 # So basically, we're doing a hack
 # Specifically, the default jenkins serviceaccount is called default and now it has cluster-admin and can do whatever it wants
 # Like say locally install a helm chart into the cluster that it's installed on
-# namespaces is forbidden: User "system:serviceaccount:jenkins:default" cannot create resource "namespaces" in API group "" at the cluster scope
+# namespaces is forbidden: User "system:serviceaccount:jenkins:jenkins" cannot create resource "namespaces" in API group "" at the cluster scope
 resource "kubernetes_cluster_role" "create_namespaces" {
   metadata {
     name = "create-namespaces"
@@ -142,7 +154,7 @@ resource "kubernetes_cluster_role_binding" "create_namespaces" {
 
   subject {
     kind      = "ServiceAccount"
-    name      = "default"
+    name      = local.kubernetes_service_account_name
     namespace = local.helm_namespace
   }
 
@@ -162,11 +174,50 @@ resource "kubernetes_cluster_role_binding" "jenkins" {
 
   subject {
     kind      = "ServiceAccount"
-    name      = "default"
+    name      = local.kubernetes_service_account_name
     namespace = local.helm_namespace
   }
 
   depends_on = [helm_release.jenkins]
+}
+
+resource "aws_iam_policy" "jenkins_ecr" {
+  name        = "jenkins-ecr"
+  description = "Jenkins Policy"
+  # Become a god of ECR
+  # TODO: Pare this down to just what's needed to push app images
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Action = [
+          "ecr:*",
+          "ssm:GetParameter",
+        ]
+        Effect   = "Allow"
+        Resource = "*"
+      },
+    ]
+  })
+}
+
+
+module "eks_jenkins_ecr_iam_role" {
+  source    = "terraform-aws-modules/iam/aws//modules/iam-role-for-service-accounts-eks"
+  version = "~>5.30"
+  role_name = "jenkins-ecr"
+
+  role_policy_arns = {
+    policy = aws_iam_policy.jenkins_ecr.arn
+  }
+
+  oidc_providers = {
+    one = {
+      provider_arn               = module.eks.oidc_provider_arn
+      namespace_service_accounts = ["${local.helm_namespace}:default", "${local.helm_namespace}:jenkins"]
+    }
+  }
+  
 }
 
 data "kubernetes_service" "jenkins" {
@@ -186,6 +237,12 @@ data "kubernetes_secret" "jenkins" {
     namespace = local.helm_namespace
   }
   depends_on = [helm_release.jenkins]
+}
+
+resource "aws_ssm_parameter" "jenkins" {
+  name  = "/inadev/openweathermap-api-key"
+  type  = "SecureString"
+  value = var.openweathermap_api_key
 }
 
 # 
