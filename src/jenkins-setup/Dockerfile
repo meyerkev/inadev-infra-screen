@@ -3,6 +3,9 @@ FROM python:3.11-slim
 
 RUN apt update && apt upgrade -y
 
+# Debugging only, but useful nonetheless
+RUN pip install --upgrade pip ipython
+
 # Create and set the working directory
 WORKDIR /app
 

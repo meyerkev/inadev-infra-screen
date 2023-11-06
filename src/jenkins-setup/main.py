@@ -1,14 +1,22 @@
-import jenkins
+"""
+Make or update a Jenkins project and GitHub webhook for a 
+given GitHub repository, then run the build
+"""
 import os
-from github import Auth, Github
+import jenkins
+from github import Auth, Github, GithubException
 
 # GitHub credentials
 GITHUB_AUTH_TOKEN = os.environ.get("GITHUB_AUTH_TOKEN")
 if not GITHUB_AUTH_TOKEN:
-    raise Exception("GITHUB_AUTH_TOKEN environment variable must be set.")
+    raise ValueError("GITHUB_AUTH_TOKEN environment variable must be set.")
 GITHUB_REPOSITORY_URL = os.environ.get("GITHUB_REPOSITORY_URL")
-if not GITHUB_REPOSITORY_URL or not  "github.com" in GITHUB_REPOSITORY_URL:
-    raise Exception("GITHUB_REPOSITORY environment variable must be set to a fully qualified github.com URL.")
+if not GITHUB_REPOSITORY_URL or not "github.com" in GITHUB_REPOSITORY_URL:
+    raise ValueError(
+        "GITHUB_REPOSITORY environment variable must be set to a fully "
+        "qualified github.com URL.")
+if not GITHUB_REPOSITORY_URL.endswith("/"):
+    GITHUB_REPOSITORY_URL = GITHUB_REPOSITORY_URL + "/"
 
 # Strip it down to just the owner/repo
 GITHUB_REPOSITORY = GITHUB_REPOSITORY_URL.split("github.com/")[-1]
@@ -16,23 +24,33 @@ GITHUB_REPOSITORY = GITHUB_REPOSITORY.replace(".git", "")
 if GITHUB_REPOSITORY.endswith("/"):
     GITHUB_REPOSITORY = GITHUB_REPOSITORY[:-1]
 
+GIT_BRANCH = os.environ.get("GIT_BRANCH", "main")
+
+OPENWEATHERMAP_API_KEY = os.environ.get("OPENWEATHERMAP_API_KEY")
+if not OPENWEATHERMAP_API_KEY:
+    raise ValueError(
+        "OPENWEATHERMAP_API_KEY environment variable must be set.")
+
+
+
 # Jenkins credentials
 JENKINS_ENDPOINT = os.environ.get("JENKINS_ENDPOINT")
 JENKINS_USERNAME = os.environ.get("JENKINS_USERNAME")
 JENKINS_PASSWORD = os.environ.get("JENKINS_PASSWORD")
 
+
 def setup_github_webhook():
+    """
+    Set up a GitHub webhook for the given repository
+    """
     auth = Auth.Token(GITHUB_AUTH_TOKEN)
 
     # First create a Github instance:
 
     # Public Web Github
     g = Github(auth=auth)
-    
     webhook_url = f"{JENKINS_ENDPOINT}/github-webhook/"
-
     webhook_events = ["push", "pull_request"]
-
 
     # Get the repository
     repo = g.get_repo(GITHUB_REPOSITORY)
@@ -41,22 +59,32 @@ def setup_github_webhook():
     # sort of kind of idempotent, sure
     try:
         # This name seems to be required to be "web" for some reason
-        repo.create_hook("web", {"url": webhook_url, "content_type": "json"}, webhook_events, active=True)
-    except Exception as e:
+        repo.create_hook(
+            "web", {"url": webhook_url, "content_type": "json"}, webhook_events, active=True)
+    except GithubException as e:
         if "Hook already exists on this repository" in str(e):
             hooks = repo.get_hooks()
             for hook in hooks:
                 if hook.config["url"] == webhook_url:
-                    hook.edit(name = hook.name, config={"url": webhook_url, "content_type": "json"}, events=webhook_events, active=True)
+                    hook.edit(name=hook.name, config={
+                              "url": webhook_url, 
+                              "content_type": "json"}, 
+                              events=webhook_events,
+                              active=True)
             return
-        
-        print(f"Failed to create webhook for {GITHUB_REPOSITORY} on url {webhook_url}.")
+
+        print(
+            f"Failed to create webhook for {GITHUB_REPOSITORY} on url {webhook_url}.")
         print(e)
         raise e
 
 def setup_jenkins_project():
+    """
+    Set up a Jenkins project for the given repository, and build it
+    """
     # Initialize the Jenkins server connection
-    server = jenkins.Jenkins(JENKINS_ENDPOINT, username=JENKINS_USERNAME, password=JENKINS_PASSWORD)
+    server = jenkins.Jenkins(
+        JENKINS_ENDPOINT, username=JENKINS_USERNAME, password=JENKINS_PASSWORD)
 
     # TODO: Make all these names into parameters as well
     # Create a new Jenkins folder
@@ -64,28 +92,81 @@ def setup_jenkins_project():
     try:
         server.create_folder(folder_name)
     except jenkins.JenkinsException as original_exception:
-        try:        
+        try:
             server.assert_folder(folder_name)
         except jenkins.JenkinsException as assert_exception:
             print(f"Failed to create Jenkins folder '{folder_name}'.")
             print(f"Original exception: {original_exception}")
             print(f"Assert exception: {assert_exception}")
-            raise original_exception
+            raise original_exception from assert_exception
+        
+    # TODO: Add a credential for the Open Weather Map API key
+    # Unfortunately, the XML is... hard.  
+    # So it's hard-coded in two places it should never ever be hard-coded.  
 
-    return 
-    # Create a new Jenkins credential
-    try:
-        server.create_credential(folder_name)
-    except jenkins.JenkinsException:
-        try:
-            server.assert_credential(folder_name, "github")
-        except:
-            pass
+    # Do not ask how long it took me to figure out that .strip() was needed here
+    project_config = (f"""
+<?xml version='1.1' encoding='UTF-8'?>
+<flow-definition plugin="workflow-job@1360.vc6700e3136f5">
+  <actions>
+    <org.jenkinsci.plugins.pipeline.modeldefinition.actions.DeclarativeJobAction plugin="pipeline-model-definition@1.9.3"/>
+    <org.jenkinsci.plugins.pipeline.modeldefinition.actions.DeclarativeJobPropertyTrackerAction plugin="pipeline-model-definition@1.9.3">
+      <jobProperties/>
+      <triggers/>
+      <parameters/>
+      <options/>
+    </org.jenkinsci.plugins.pipeline.modeldefinition.actions.DeclarativeJobPropertyTrackerAction>
+  </actions>
+  <description></description>
+  <keepDependencies>false</keepDependencies>
+  <properties>
+    <com.coravy.hudson.plugins.github.GithubProjectProperty plugin="github@1.37.3.1">
+      <projectUrl>{GITHUB_REPOSITORY_URL}</projectUrl>
+      <displayName></displayName>
+    </com.coravy.hudson.plugins.github.GithubProjectProperty>
+    <org.jenkinsci.plugins.workflow.job.properties.PipelineTriggersJobProperty>
+      <triggers>
+        <com.cloudbees.jenkins.GitHubPushTrigger plugin="github@1.37.3.1">
+          <spec></spec>
+        </com.cloudbees.jenkins.GitHubPushTrigger>
+      </triggers>
+    </org.jenkinsci.plugins.workflow.job.properties.PipelineTriggersJobProperty>
+  </properties>
+  <definition class="org.jenkinsci.plugins.workflow.cps.CpsScmFlowDefinition" plugin="workflow-cps@3806.va_3a_6988277b_2">
+    <scm class="hudson.plugins.git.GitSCM" plugin="git@5.2.0">
+      <configVersion>2</configVersion>
+      <userRemoteConfigs>
+        <hudson.plugins.git.UserRemoteConfig>
+          <url>{GITHUB_REPOSITORY_URL}</url>
+        </hudson.plugins.git.UserRemoteConfig>
+      </userRemoteConfigs>
+      <branches>
+        <hudson.plugins.git.BranchSpec>
+          <name>{GIT_BRANCH}</name>
+        </hudson.plugins.git.BranchSpec>
+      </branches>
+      <doGenerateSubmoduleConfigurations>false</doGenerateSubmoduleConfigurations>
+      <submoduleCfg class="empty-list"/>
+      <extensions/>
+    </scm>
+    <scriptPath>Jenkinsfile</scriptPath>
+    <lightweight>true</lightweight>
+  </definition>
+  <triggers/>
+  <disabled>false</disabled>
+</flow-definition>
+""").strip()
+    project_name = f"{folder_name}/inadev-pipeline"
+    # Create a new Jenkins project
+    server.upsert_job(project_name, project_config)
 
-    
+    # Build the project just to say we did
+    server.build_job(project_name)
 
 
 def main():
+    """
+    Main function"""
     setup_jenkins_project()
     setup_github_webhook()
 

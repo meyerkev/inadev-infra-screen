@@ -1,0 +1,1 @@
+force_delete_ecr_repositories = true
