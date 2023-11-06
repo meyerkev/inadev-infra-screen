@@ -6,6 +6,15 @@ agent:
       mountPath: /var/run/docker.sock
       readOnly: false
 
+  additionalContainers:
+    # Docker
+    - sideContainerName: dind
+      image: docker
+      tag: dind
+      command: dockerd-entrypoint.sh
+      args: ""
+      privileged: true
+
 controller:
   servicePort: 80
   serviceType: LoadBalancer
