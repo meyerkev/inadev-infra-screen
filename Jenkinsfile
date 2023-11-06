@@ -14,6 +14,14 @@ pipeline {
                 checkout scm
             }
         }
+        stage('AWS Login Password') {
+            steps {
+                withCredentials([string(credentialsId: 'aws-ecr-credentials', variable: 'AWS_ECR_CREDENTIALS')]) {
+                    aws_password = sh(returnStdout: true, script: "aws ecr get-login-password --region us-east-2").trim()
+                }
+            }
+        }
+
         stage('Build Docker in docker') {
             steps {
                 container('dind') {
