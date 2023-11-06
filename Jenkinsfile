@@ -28,6 +28,7 @@ pipeline {
                         sh "docker version || echo 'Docker not installed'"
                         sh "docker login --username AWS --password ${aws_password} ${IMAGE_REPOSITORY}"
                         sh "docker build -t ${IMAGE_REPOSITORY}:${git_tag} src/app/"
+                        sh "sleep 3600"
                         sh "docker push ${IMAGE_REPOSITORY}:${git_tag}"
                     }
                 }
