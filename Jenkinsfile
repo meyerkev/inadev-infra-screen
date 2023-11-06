@@ -13,6 +13,17 @@ pipeline {
                 checkout scm
             }
         }
+        stage('Build Docker in docker') {
+            steps {
+                container('dind') {
+                    script {
+                        // Build the Docker image
+                        sh "docker version || echo 'Docker not installed'"
+                        sh "sleep 3600"
+                    }
+                }
+            }
+        }
         stage('Build Docker') {
             steps {
                 script {

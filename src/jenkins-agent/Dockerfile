@@ -44,4 +44,4 @@ RUN apt install -y \
     && usermod -aG docker jenkins  
 
 
-# USER jenkins
+USER jenkins
