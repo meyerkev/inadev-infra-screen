@@ -166,7 +166,7 @@ resource "kubernetes_cluster_role_binding" "jenkins" {
 
   subject {
     kind      = "ServiceAccount"
-    name      = "default"
+    name      = "jenkins"
     namespace = local.helm_namespace
   }
 

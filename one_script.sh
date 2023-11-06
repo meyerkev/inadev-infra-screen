@@ -120,11 +120,25 @@ while true; do
     sleep 5
 done
 
+echo "Your image repository is at: $APP_IMAGE"
+echo "Please update the Jenkinsfile to use the correct ECR repository"
+echo
+echo "Jenkins is up at $JENKINS_ENDPOINT"
+echo "Username: $JENKINS_USERNAME"
+echo "Password: $JENKINS_PASSWORD"
+
 
 export SERVICE_IP=$(kubectl get svc --namespace inadev-kmeyer inadev-kmeyer --template "{{ range (index .status.loadBalancer.ingress 0) }}{{.}}{{ end }}")
+count = 0
 while [[ $(curl -s -o /dev/null -w "%{http_code}" http://$SERVICE_IP) != "200" ]]; do
-    echo "Waiting for service to come up"
+    echo "Waiting for service to come up at $SERVICE_IP"
     sleep 5
+    count=$((count+1))
+    # If it takes more than 5 minutes, something is wrong
+    if [[ $count -gt 60 ]]; then
+        echo "Service failed to come up"
+        break
+    fi
 done
 echo
 echo "Your image repository is at: $APP_IMAGE"
