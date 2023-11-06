@@ -38,7 +38,7 @@ pipeline {
             steps {
                 script {
                     // Install the Helm chart
-                    sh "helm upgrade --install ${CHART_NAME} ./helm/inadev-kmeyer --namespace=${NAMESPACE} --create-namespace --atomic --timeout=5m --wait --set openweathermapApiKey=${OPENWEATHERMAP_API_KEY},image.repository=${IMAGE_REPOSITORY},image.tag=${git_tag}"
+                    sh "helm upgrade --install ${CHART_NAME} ./helm/inadev-kmeyer --namespace=${NAMESPACE} --create-namespace --atomic --timeout=5m --wait --set \"openweathermapApiKey=${OPENWEATHERMAP_API_KEY},image.repository=${IMAGE_REPOSITORY},image.tag=${git_tag}\""
                 }
             }
         }
