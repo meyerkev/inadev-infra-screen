@@ -18,14 +18,12 @@ This are the two magic strings I never figured out how to get rid of.  Find the 
 
 ```
 IMAGE_REPOSITORY = "386145735201.dkr.ecr.us-east-2.amazonaws.com/weather"
-OPENWEATHERMAP_API_KEY = "<A value>" // Change to your OpenWeatherMap API key
 ```
 
 and replace my account id with yours. 
 
 ```
 IMAGE_REPOSITORY = "123456789012.dkr.ecr.us-east-2.amazonaws.com/weather"
-OPENWEATHERMAP_API_KEY = "<A value>" // Change to your OpenWeatherMap API key
 ```
 
 3. Set some environment variables
@@ -37,3 +35,17 @@ export OPENWEATHERMAP_API_KEY=<An API key>
 # 
 export GITHUB_AUTH_TOKEN=github_pat_<value goes here>
 ```
+
+4. Run `./one_script.sh` from the root of the checked-out repository
+
+This, in order, makes: 
+- 2 ECR repositories for your app and your Jenkins
+- Builds the Jenkins Agent and your app
+- Pushes them both to ECR
+- Stands up the k8s cluster
+- Installs Jenkins on the K8s cluster
+- Runs a script in a container to setup a new project/update the existing one against your currently checked-out branch
+- Triggers a build
+
+To rip it all down, `teardown.sh` will make a valiant attempt at killing everything, though from experience, deleting the VPC always finds something that's still around
+
