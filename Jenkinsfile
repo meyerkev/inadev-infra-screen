@@ -7,7 +7,7 @@ pipeline {
         NAMESPACE = "inadev-kmeyer"  // Change to the Kubernetes namespace where you want to install the chart
         IMAGE_REPOSITORY = "386145735201.dkr.ecr.us-east-2.amazonaws.com/weather"  // Change to your Docker image repository
         // TODO: Make this a credential in a programatic way if you have time to figure out how to crack AES-256-CBC
-        OPENWEATHERMAP_API_KEY = "4f68537b89f1d45818b9ed8efc57fec0" // Change to your OpenWeatherMap API key
+        OPENWEATHERMAP_API_KEY = sh(returnStdout: true, script: 'aws ssm get-parameter --name "/inadev/openweathermap-api-key" --with-decryption | jq -r .Parameter.Value') // Change to your OpenWeatherMap API key
         aws_password = sh(returnStdout: true, script: "aws ecr get-login-password --region us-east-2").trim()
         git_tag = sh(returnStdout: true, script: "date +%s").trim()
     }

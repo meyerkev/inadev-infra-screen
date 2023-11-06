@@ -60,7 +60,7 @@ popd
 
 pushd terraform/eks
 terraform init
-terraform apply -auto-approve -var-file=tfvars/inadev.tfvars -var "jenkins_agent_image=$JENKINS_IMAGE" -var "jenkins_agent_tag=$DOCKER_TAG"
+terraform apply -auto-approve -var-file=tfvars/inadev.tfvars -var "jenkins_agent_image=$JENKINS_IMAGE" -var "jenkins_agent_tag=$DOCKER_TAG" -var "openweathermap_api_key=$OPENWEATHERMAP_API_KEY"
 
 # aws eks --region us-east-2 update-kubeconfig --name inadev-kmeyer
 KUBECONFIG_COMMAND=`terraform output -raw update_kubeconfig`
@@ -143,6 +143,9 @@ while [[ $(curl -s -o /dev/null -w "%{http_code}" http://$SERVICE_IP) != "200" ]
         break
     fi
 done
+echo "----------------------------------------------------------"
+echo "To access the cluster, run the following command:"
+echo "$KUBECONFIG_COMMAND"
 echo
 echo "Your image repository is at: $APP_IMAGE"
 echo "Please update the Jenkinsfile to use the correct ECR repository"

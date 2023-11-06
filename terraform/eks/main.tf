@@ -190,6 +190,7 @@ resource "aws_iam_policy" "jenkins_ecr" {
       {
         Action = [
           "ecr:*",
+          "ssm:GetParameter",
         ]
         Effect   = "Allow"
         Resource = "*"
@@ -234,6 +235,12 @@ data "kubernetes_secret" "jenkins" {
     namespace = local.helm_namespace
   }
   depends_on = [helm_release.jenkins]
+}
+
+resource "aws_ssm_parameter" "jenkins" {
+  name  = "/inadev/openweathermap-api-key"
+  type  = "SecureString"
+  value = var.openweathermap_api_key
 }
 
 # 
