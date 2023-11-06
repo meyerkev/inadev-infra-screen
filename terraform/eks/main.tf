@@ -119,6 +119,8 @@ resource "helm_release" "jenkins" {
 
   wait          = true
   wait_for_jobs = true
+
+  depends_on = [ module.eks ]
 }
 
 # Everything about this is actually terrifying.  
