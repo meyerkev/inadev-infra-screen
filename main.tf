@@ -3,6 +3,8 @@ locals {
   # There's a hack on it, but I forget what it is
   availability_zones = ["${var.aws_region}a", "${var.aws_region}b", "${var.aws_region}c"]
   validate_key_pair = var.create_key_pair || var.key_pair_name != null ? "Please provide a keypair or create one" : true
+
+  helm_namespace = "jenkins"
 }
 
 module "vpc" {
@@ -65,12 +67,16 @@ module "eks" {
     eks_key_pair_name = var.create_key_pair ? module.key_pair.key_pair_name : var.key_pair_name
 }
 
+resource "aws_ecr_repository" "weather" {
+  name = "weather"
+}
+
 # install jenkins
 resource "helm_release" "jenkins" {
   name      = "jenkins"
   repository = "https://charts.jenkins.io"
   chart     = "jenkins"
-  namespace = "jenkins"
+  namespace = local.helm_namespace
   version   = "4.8.2"
 
   create_namespace = true
@@ -79,16 +85,35 @@ resource "helm_release" "jenkins" {
     name  = "controller.serviceType"
     value = "LoadBalancer"
   }
+
+  set {
+    name  = "controller.servicePort"
+    value = "80"
+  }
 }
 
-module "alb-ingress-controller" {
-  source  = "campaand/alb-ingress-controller/aws"
-  version = "2.0.0"
-  cluster_name = module.eks.cluster_name
-
-  depends_on = [module.eks]
+data "kubernetes_service" "jenkins" {
+  metadata {
+    name      = "jenkins"
+    namespace = local.helm_namespace
+  }
+  depends_on = [helm_release.jenkins]
 }
 
-resource "aws_ecr_repository" "weather" {
-  name = "weather"
+# So let's get this out of the way. 
+# This is NOT the way to make this happen.  
+# The actual way to make this happen is to dump these to SSM parameters and it's a whole thing
+data "kubernetes_secret" "jenkins" {
+  metadata {
+    name      = "jenkins"
+    namespace = local.helm_namespace
+  }
+  depends_on = [helm_release.jenkins]
 }
+
+# 
+
+# Things we're not doing
+# HTTPS
+# An actual stable URL (which is why we had to do that thing above)
+# Proper ALB's
