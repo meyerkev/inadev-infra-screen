@@ -19,6 +19,7 @@ pipeline {
                 container('dind') {
                     script {
                         // Build the Docker image
+                        sh "printenv"
                         sh "docker version || echo 'Docker not installed'"
                         sh "export GIT_TAG=\$(git rev-parse HEAD) && docker build -t ${IMAGE_REPOSITORY}:\${GIT_TAG} src/app/ && docker push ${IMAGE_REPOSITORY}:\${GIT_TAG}"
                     }
