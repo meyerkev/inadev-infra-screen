@@ -11,6 +11,8 @@
 - An OpenWeather API token
 
 # Instructions
+
+## Turning up a cluster
 1. Get an OpenWeatherMap API key from https://home.openweathermap.org/api_keys.  Make an account if required.  
 
 
@@ -50,7 +52,10 @@ Password: <a password>
 Your service can be found at: http://a3c68d60dfcfa4f829de10d20a0dd3d7-1998966705.us-east-2.elb.amazonaws.com
 ```
 
+You can login to Jenkins with those credentials and then find your service at that ELB endpoint
+
+## Turning down a cluster
 To rip it all down, `teardown.sh` will make a valiant attempt at killing everything, though from experience deleting the VPC always finds something that's still around
 
-Particularly, I reccomend looking at your load balancers in EC2.  
+Particularly, I reccomend looking at your load balancers and security groups in EC2; There's always one left over.  
 
