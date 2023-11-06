@@ -15,16 +15,23 @@ if not GITHUB_REPOSITORY_URL or not "github.com" in GITHUB_REPOSITORY_URL:
     raise ValueError(
         "GITHUB_REPOSITORY environment variable must be set to a fully "
         "qualified github.com URL.")
+if not GITHUB_REPOSITORY_URL.endswith("/"):
+    GITHUB_REPOSITORY_URL = GITHUB_REPOSITORY_URL + "/"
 
 # Strip it down to just the owner/repo
 GITHUB_REPOSITORY = GITHUB_REPOSITORY_URL.split("github.com/")[-1]
 GITHUB_REPOSITORY = GITHUB_REPOSITORY.replace(".git", "")
 if GITHUB_REPOSITORY.endswith("/"):
     GITHUB_REPOSITORY = GITHUB_REPOSITORY[:-1]
-if not GITHUB_REPOSITORY_URL.endswith("/"):
-    GITHUB_REPOSITORY_URL = GITHUB_REPOSITORY_URL + "/"
 
 GIT_BRANCH = os.environ.get("GIT_BRANCH", "main")
+
+OPENWEATHERMAP_API_KEY = os.environ.get("OPENWEATHERMAP_API_KEY")
+if not OPENWEATHERMAP_API_KEY:
+    raise ValueError(
+        "OPENWEATHERMAP_API_KEY environment variable must be set.")
+
+
 
 # Jenkins credentials
 JENKINS_ENDPOINT = os.environ.get("JENKINS_ENDPOINT")
@@ -42,9 +49,7 @@ def setup_github_webhook():
 
     # Public Web Github
     g = Github(auth=auth)
-
     webhook_url = f"{JENKINS_ENDPOINT}/github-webhook/"
-
     webhook_events = ["push", "pull_request"]
 
     # Get the repository
@@ -73,7 +78,6 @@ def setup_github_webhook():
         print(e)
         raise e
 
-
 def setup_jenkins_project():
     """
     Set up a Jenkins project for the given repository, and build it
@@ -95,6 +99,10 @@ def setup_jenkins_project():
             print(f"Original exception: {original_exception}")
             print(f"Assert exception: {assert_exception}")
             raise original_exception from assert_exception
+        
+    # TODO: Add a credential for the Open Weather Map API key
+    # Unfortunately, the XML is... hard.  
+    # So it's hard-coded in two places it should never ever be hard-coded.  
 
     # Do not ask how long it took me to figure out that .strip() was needed here
     project_config = (f"""

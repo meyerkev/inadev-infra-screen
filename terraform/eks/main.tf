@@ -7,6 +7,7 @@ locals {
   validate_key_pair = var.create_key_pair || var.key_pair_name != null ? "Please provide a keypair or create one" : true
 
   helm_namespace = "jenkins"
+  kubernetes_service_account_name = "jenkins"
 }
 
 module "vpc" {
@@ -111,6 +112,11 @@ resource "helm_release" "jenkins" {
     value = var.jenkins_agent_tag
   }
 
+  set {
+    name = "serviceAccountAgent.name"
+    value = local.kubernetes_service_account_name
+  }
+
   wait          = true
   wait_for_jobs = true
 }
@@ -120,7 +126,7 @@ resource "helm_release" "jenkins" {
 # So basically, we're doing a hack
 # Specifically, the default jenkins serviceaccount is called default and now it has cluster-admin and can do whatever it wants
 # Like say locally install a helm chart into the cluster that it's installed on
-# namespaces is forbidden: User "system:serviceaccount:jenkins:default" cannot create resource "namespaces" in API group "" at the cluster scope
+# namespaces is forbidden: User "system:serviceaccount:jenkins:jenkins" cannot create resource "namespaces" in API group "" at the cluster scope
 resource "kubernetes_cluster_role" "create_namespaces" {
   metadata {
     name = "create-namespaces"
@@ -146,7 +152,7 @@ resource "kubernetes_cluster_role_binding" "create_namespaces" {
 
   subject {
     kind      = "ServiceAccount"
-    name      = "default"
+    name      = local.kubernetes_service_account_name
     namespace = local.helm_namespace
   }
 
@@ -166,7 +172,7 @@ resource "kubernetes_cluster_role_binding" "jenkins" {
 
   subject {
     kind      = "ServiceAccount"
-    name      = "jenkins"
+    name      = local.kubernetes_service_account_name
     namespace = local.helm_namespace
   }
 

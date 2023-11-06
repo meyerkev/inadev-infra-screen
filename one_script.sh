@@ -101,6 +101,7 @@ docker run \
     -e GITHUB_REPOSITORY_URL="$GITHUB_REPOSITORY_URL" \
     -e APP_IMAGE="$APP_IMAGE" \
     -e GIT_BRANCH="$GIT_BRANCH" \
+    -e OPENWEATHERMAP_API_KEY="$OPENWEATHERMAP_API_KEY" \
     jenkins-setup
 
 
@@ -110,6 +111,14 @@ docker run \
 
 echo "Jenkins has been configured and we have triggered a build."
 echo "Waiting for the build to complete and the service to come up"
+
+echo "Your image repository is at: $APP_IMAGE"
+echo "Please update the Jenkinsfile to use the correct ECR repository"
+echo
+echo "Jenkins is up at $JENKINS_ENDPOINT"
+echo "Username: $JENKINS_USERNAME"
+echo "Password: $JENKINS_PASSWORD"
+
 #Wait for the service to come up
 set +e # Don't exit on error
 while true; do
@@ -120,16 +129,10 @@ while true; do
     sleep 5
 done
 
-echo "Your image repository is at: $APP_IMAGE"
-echo "Please update the Jenkinsfile to use the correct ECR repository"
-echo
-echo "Jenkins is up at $JENKINS_ENDPOINT"
-echo "Username: $JENKINS_USERNAME"
-echo "Password: $JENKINS_PASSWORD"
 
 
 export SERVICE_IP=$(kubectl get svc --namespace inadev-kmeyer inadev-kmeyer --template "{{ range (index .status.loadBalancer.ingress 0) }}{{.}}{{ end }}")
-count = 0
+count=0
 while [[ $(curl -s -o /dev/null -w "%{http_code}" http://$SERVICE_IP) != "200" ]]; do
     echo "Waiting for service to come up at $SERVICE_IP"
     sleep 5

@@ -11,22 +11,24 @@
 - An OpenWeather API token
 
 # Instructions
+1. Get an OpenWeatherMap API key from https://home.openweathermap.org/api_keys.  Make an account if required.  
+2. Fix the Jenkinsfile
 
-1. Fix the Jenkinsfile
-
-This is the one magic string I never figured out how to get rid of.  Find the line in the Jenkinsfile that says:
+This are the two magic strings I never figured out how to get rid of.  Find the line in the Jenkinsfile that says:
 
 ```
 IMAGE_REPOSITORY = "386145735201.dkr.ecr.us-east-2.amazonaws.com/weather"
+OPENWEATHERMAP_API_KEY = "<A value>" // Change to your OpenWeatherMap API key
 ```
 
 and replace my account id with yours. 
 
 ```
 IMAGE_REPOSITORY = "123456789012.dkr.ecr.us-east-2.amazonaws.com/weather"
+OPENWEATHERMAP_API_KEY = "<A value>" // Change to your OpenWeatherMap API key
 ```
 
-2. Set some environment variables
+3. Set some environment variables
 
 ```
 # Make one at https://home.openweathermap.org/api_keys
