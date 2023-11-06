@@ -169,6 +169,43 @@ resource "kubernetes_cluster_role_binding" "jenkins" {
   depends_on = [helm_release.jenkins]
 }
 
+resource "aws_iam_policy" "jenkins_ecr" {
+  name        = "jenkins-ecr"
+  description = "Jenkins Policy"
+  # Become a god of ECR
+  # TODO: Pare this down to just what's needed to push app images
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Action = [
+          "ecr:*",
+        ]
+        Effect   = "Allow"
+        Resource = "*"
+      },
+    ]
+  })
+}
+
+
+module "eks_jenkins_ecr_iam_role" {
+  source    = "terraform-aws-modules/iam/aws//modules/iam-role-for-service-accounts-eks"
+  version = "~>5.30"
+  role_name = "jenkins-ecr"
+
+  role_policy_arns = {
+    policy = aws_iam_policy.jenkins_ecr.arn
+  }
+
+  oidc_providers = {
+    one = {
+      provider_arn               = module.eks.oidc_provider_arn
+      namespace_service_accounts = ["${local.helm_namespace}:default", "${local.helm_namespace}:jenkins"]
+    }
+  }
+}
+
 data "kubernetes_service" "jenkins" {
   metadata {
     name      = "jenkins"

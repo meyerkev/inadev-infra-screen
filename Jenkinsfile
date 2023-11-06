@@ -17,7 +17,8 @@ pipeline {
         git_tag = sh(returnStdout: true, script: "date +%s").trim()
     }
 
-    stages {Checkout') {
+    stages {C
+        stage('Checkout') {
             steps {
                 checkout scm
             }
