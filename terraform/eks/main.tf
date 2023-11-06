@@ -71,6 +71,10 @@ module "eks" {
   # TODO: Make some of these install scripts architecture agnostic
   # Until then, force x86_64
   target_architecture = "x86_64"
+
+  node_group_iam_role_additional_policies = {
+    AmazonECRPush = aws_iam_policy.jenkins_ecr.arn
+  }
 }
 
 # install jenkins
@@ -204,6 +208,7 @@ module "eks_jenkins_ecr_iam_role" {
       namespace_service_accounts = ["${local.helm_namespace}:default", "${local.helm_namespace}:jenkins"]
     }
   }
+  
 }
 
 data "kubernetes_service" "jenkins" {

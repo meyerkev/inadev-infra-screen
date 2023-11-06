@@ -48,3 +48,8 @@ variable "eks_key_pair_name" {
   type    = string
   default = null
 }
+
+variable "node_group_iam_role_additional_policies" {
+  type = map(string)
+  default = {}
+}

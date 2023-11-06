@@ -79,7 +79,7 @@ module "eks" {
     ami_type                     = contains(data.aws_ec2_instance_type.eks_node_instance_type.supported_architectures, "arm64") ? "AL2_ARM_64" : "AL2_x86_64"
     instance_types               = [local.eks_node_instance_type]
     iam_role_attach_cni_policy   = true
-    iam_role_additional_policies = { AmazonEBSCSIDriverPolicy = "arn:aws:iam::aws:policy/service-role/AmazonEBSCSIDriverPolicy" }
+    iam_role_additional_policies = merge({ AmazonEBSCSIDriverPolicy = "arn:aws:iam::aws:policy/service-role/AmazonEBSCSIDriverPolicy" }, var.node_group_iam_role_additional_policies)
   }
 
   eks_managed_node_groups = {
