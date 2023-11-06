@@ -101,7 +101,6 @@ docker run \
     -e OPENWEATHERMAP_API_KEY="$OPENWEATHERMAP_API_KEY" \
     jenkins-setup
 
-echo docker run -e JENKINS_ENDPOINT="$JENKINS_ENDPOINT" -e JENKINS_USERNAME="$JENKINS_USERNAME" -e JENKINS_PASSWORD="$JENKINS_PASSWORD" -e GITHUB_AUTH_TOKEN="$GITHUB_AUTH_TOKEN" -e GITHUB_REPOSITORY_URL="$GITHUB_REPOSITORY_URL" -e APP_IMAGE="$APP_IMAGE" -it jenkins-setup bash
 # Q: Does it make sense to kill the setup container?
 # A: Not while debugging, it doesn't.   
 # docker image rm jenkins-setup
