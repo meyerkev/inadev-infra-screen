@@ -19,9 +19,8 @@ pipeline {
                 container('dind') {
                     script {
                         // Build the Docker image
-                        sh "printenv"
                         sh "docker version || echo 'Docker not installed'"
-                        sh "export GIT_TAG=\$(git rev-parse HEAD) && docker build -t ${IMAGE_REPOSITORY}:\${GIT_TAG} src/app/ && docker push ${IMAGE_REPOSITORY}:\${GIT_TAG}"
+                        sh "docker build -t ${IMAGE_REPOSITORY}:${GIT_COMMIT} src/app/ && docker push ${IMAGE_REPOSITORY}:${GIT_COMMIT}"
                     }
                 }
             }
@@ -30,7 +29,7 @@ pipeline {
             steps {
                 script {
                     // Install the Helm chart
-                    sh "export GIT_TAG=\$(git rev-parse HEAD) && helm upgrade --install ${CHART_NAME} ./helm/inadev-kmeyer --namespace=${NAMESPACE} --create-namespace --atomic --timeout=5m --wait --set image.repository=${IMAGE_REPOSITORY},image.tag=\${GIT_TAG}"
+                    sh "helm upgrade --install ${CHART_NAME} ./helm/inadev-kmeyer --namespace=${NAMESPACE} --create-namespace --atomic --timeout=5m --wait --set image.repository=${IMAGE_REPOSITORY},image.tag=${GIT_COMMIT}"
                 }
             }
         }
