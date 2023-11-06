@@ -17,8 +17,8 @@ pipeline {
             steps {
                 script {
                     // Build the Docker image
+                    sh "docker version || echo 'Docker not installed'"
                     sh "sleep 3600"
-                    sh "docker version"
                 }
             }
         }

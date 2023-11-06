@@ -41,8 +41,7 @@ RUN apt install -y \
     && apt update \
     && apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin \
     && groupadd -f docker \
-    && usermod -aG docker jenkins \
-    && systemctl enable docker
+    && usermod -aG docker jenkins  
 
 
-USER jenkins
+# USER jenkins

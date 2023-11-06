@@ -1,10 +1,10 @@
 agent:
   privileged: true
   volumes:
-    - type: HostPath
-      hostPath: /var/run/docker.sock
-      mountPath: /var/run/docker.sock
-      readOnly: false
+    # - type: HostPath
+    #  hostPath: /var/run/docker.sock
+    #  mountPath: /var/run/docker.sock
+    #  readOnly: false
 
   additionalContainers:
     # Docker
