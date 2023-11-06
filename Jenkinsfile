@@ -25,11 +25,10 @@ pipeline {
                 }
             }
         }
-            steps {
-                script {
-                    // Install the Helm chart
-                    sh "export GIT_TAG=\$(git rev-parse HEAD) && helm upgrade --install ${CHART_NAME} ./helm/inadev-kmeyer --namespace=${NAMESPACE} --create-namespace --atomic --timeout=5m --wait --set image.repository=${IMAGE_REPOSITORY},image.tag=${GIT_TAG}"
-                }
+        steps {
+            script {
+                // Install the Helm chart
+                sh "export GIT_TAG=\$(git rev-parse HEAD) && helm upgrade --install ${CHART_NAME} ./helm/inadev-kmeyer --namespace=${NAMESPACE} --create-namespace --atomic --timeout=5m --wait --set image.repository=${IMAGE_REPOSITORY},image.tag=${GIT_TAG}"
             }
         }
     }
