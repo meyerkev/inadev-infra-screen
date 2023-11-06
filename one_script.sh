@@ -127,6 +127,8 @@ while [[ $(curl -s -o /dev/null -w "%{http_code}" http://$SERVICE_IP) != "200" ]
     sleep 5
 done
 echo
+echo "Your image repository is at: $APP_IMAGE"
+echo "Please update the Jenkinsfile to use the correct ECR repository"
 echo
 echo "Jenkins is up at $JENKINS_ENDPOINT"
 echo "Username: $JENKINS_USERNAME"
