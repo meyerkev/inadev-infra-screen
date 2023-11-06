@@ -12,7 +12,7 @@
 
 # Instructions
 1. Get an OpenWeatherMap API key from https://home.openweathermap.org/api_keys.  Make an account if required.  
-```
+
 
 2. Set some environment variables
 
