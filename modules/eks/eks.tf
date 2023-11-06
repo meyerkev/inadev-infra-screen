@@ -1,10 +1,14 @@
 locals {
   availability_zones = ["${var.region}a", "${var.region}b", "${var.region}c"]
   # This is sort of weird and I could see myself rewriting it in the future
+  # But I have many x86 laptops AND an ARM laptop.  
+  # And it's a lot easier to have architecure agreement between them.  
+  # 
   # If you set an instance type, it will use that and then look up the architecture
-  # BUT if you set a target architecture, it will use that and then look up the instance type of that architecture and then re-lookup the architecture
+  # BUT if you set a target architecture, it will use that and then look up the ideal instance type of that architecture and then re-lookup the architecture
+  # And if you don't set anything at all, it will look at your laptop, run `uname -a`, and then keep going
   #
-  # Laptop -> Architecture lookup -> default instance type lookup -> Architecture lookup
+  # Laptop -> laptop architecture lookup -> default instance type lookup -> Architecture lookup
   #
   # And if you don't set either, it will look up the architecture of the machine you're running on so that local Docker builds work by default
   # But what this means is that you can totally say "ARM.  I am ARM", pick an x64 instance type, and get an x64 cluster
@@ -83,6 +87,7 @@ module "eks" {
       groups   = ["system:masters"]
     }
   ] : [],
+  # For some reason, my IAM identity map didn't get added to my cluster.  
   local.add_user ? [
     {
       userarn  = data.aws_caller_identity.current.arn

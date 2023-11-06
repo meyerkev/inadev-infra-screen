@@ -6,7 +6,7 @@ terraform {
   # Really you ought to clean this up and use a remote backend, but this is an interview and I spin this up A LOT, then run aws-nuke on the account
   backend "s3" {
     bucket = "meyerkev-terraform-state"
-    key = "test-interview.tfstate"
+    key = "inadev-interview.tfstate"
     region = "us-east-2"
   }
 
@@ -19,7 +19,7 @@ terraform {
 }
 
 provider "aws" {
-  region = var.region
+  region = var.aws_region
   default_tags {
     tags = {
       Terraform = "true"
@@ -35,7 +35,7 @@ provider "kubernetes" {
     api_version = "client.authentication.k8s.io/v1beta1"
     command     = "aws"
     # This requires the awscli to be installed locally where Terraform is executed
-    args = ["eks", "get-token", "--region", var.region,  "--cluster-name", module.eks.cluster_name]
+    args = ["eks", "get-token", "--region", var.aws_region,  "--cluster-name", module.eks.cluster_name]
   }
 }
 
@@ -45,7 +45,7 @@ provider "helm" {
     cluster_ca_certificate = base64decode(module.eks.cluster_certificate_authority_data)
     exec {
       api_version = "client.authentication.k8s.io/v1beta1"
-      args        = ["eks", "get-token", "--region", var.region, "--cluster-name", module.eks.cluster_name]
+      args        = ["eks", "get-token", "--region", var.aws_region, "--cluster-name", module.eks.cluster_name]
       command     = "aws"
     }
   }
