@@ -5,7 +5,7 @@ pipeline {
         HELM_VERSION = "3.10.1"  // Change to the desired Helm version
         CHART_NAME = "inadev-kmeyer"  // Change to your Helm chart name
         NAMESPACE = "inadev-kmeyer"  // Change to the Kubernetes namespace where you want to install the chart
-        IMAGE_REPOSITORY = sh(returnStdout: true, script: 'aws ssm get-parameter --name "/inadev/app_ecr_repository" --with-decryption | jq -r .Parameter.Value') // Change to your Docker image repository
+        IMAGE_REPOSITORY = sh(returnStdout: true, script: 'aws ssm get-parameter --name "/inadev/app_ecr_repository" --with-decryption | jq -r .Parameter.Value').trim() // Change to your Docker image repository
         // TODO: Make this a credential in a programatic way if you have time to figure out how to crack AES-256-CBC
         OPENWEATHERMAP_API_KEY = sh(returnStdout: true, script: 'aws ssm get-parameter --name "/inadev/openweathermap-api-key" --with-decryption | jq -r .Parameter.Value') // Change to your OpenWeatherMap API key
         aws_password = sh(returnStdout: true, script: "aws ecr get-login-password --region us-east-2").trim()
