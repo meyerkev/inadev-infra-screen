@@ -29,9 +29,6 @@ GIT_BRANCH=$(git branch --show-current)
 echo "Building docker images"
 
 # Make your image first so if it breaks, you're not waiting for the 45 minute long EKS cluster to build (... or fail to build)
-docker build --build-arg OPENWEATHERMAP_API_KEY=$OPENWEATHERMAP_API_KEY -t weather -f src/app/Dockerfile src/app
-docker build -t custom-jenkins-agent -f src/jenkins-agent/Dockerfile src/jenkins-agent
-
 echo "Done building docker images"
 echo "Building terraform for the ECR repostiories and EKS cluster"
 # Make the ECR repos
@@ -40,6 +37,7 @@ terraform init
 terraform apply -auto-approve
 
 # Build the app image
+docker build --build-arg OPENWEATHERMAP_API_KEY=$OPENWEATHERMAP_API_KEY -t weather -f src/app/Dockerfile src/app
 APP_IMAGE=$(terraform output -json | jq -r .repository_url.value.weather)
 APP_TAG=${APP_IMAGE}:${DOCKER_TAG}
 aws ecr get-login-password --region us-east-2 | docker login --username AWS --password-stdin ${APP_IMAGE}
@@ -47,6 +45,7 @@ docker tag weather-app $APP_TAG
 docker push $APP_TAG
 
 # Build the Jenkins image
+docker build -t custom-jenkins-agent -f src/jenkins-agent/Dockerfile src/jenkins-agent
 JENKINS_IMAGE=$(terraform output -json | jq -r .repository_url.value.jenkins)
 JENKINS_TAG=${JENKINS_IMAGE}:${DOCKER_TAG}
 aws ecr get-login-password --region us-east-2 | docker login --username AWS --password-stdin ${JENKINS_IMAGE}
