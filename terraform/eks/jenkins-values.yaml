@@ -15,6 +15,9 @@ agent:
       args: ""
       privileged: true
 
+serviceAccountAgent:
+  name: jenkins
+
 controller:
   servicePort: 80
   serviceType: LoadBalancer

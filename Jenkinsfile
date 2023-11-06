@@ -27,7 +27,8 @@ pipeline {
                         sh "pwd && ls"
                         sh "docker version || echo 'Docker not installed'"
                         sh "docker login --username AWS --password ${aws_password} ${IMAGE_REPOSITORY}"
-                        sh "docker build -t ${IMAGE_REPOSITORY}:${git_tag} src/app/ && docker push ${IMAGE_REPOSITORY}:${git_tag}"
+                        sh "docker build -t ${IMAGE_REPOSITORY}:${git_tag} src/app/"
+                        sh "docker push ${IMAGE_REPOSITORY}:${git_tag}"
                     }
                 }
             }
