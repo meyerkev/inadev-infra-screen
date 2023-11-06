@@ -5,7 +5,7 @@ variable "aws_region" {
 
 variable "cluster_name" {
   type    = string
-  default = "eks-cluster"
+  default = "inadev-kmeyer"
 }
 
 variable "vpc_name" {
@@ -18,38 +18,17 @@ variable "vpc_cidr" {
   default = "10.0.0.0/16"
 }
 
-variable "cluster_k8s_version" {
-  type    = string
-  default = "1.28"
+variable "create_key_pair" {
+  type    = bool
+  default = true
 }
 
-variable "public_nodes" {
-  type        = bool
-  default     = true
-  description = "If true, we put our nodes in public subnets for easier access"
-}
-
-variable "eks_node_instance_type" {
-  type    = string
-  default = null  # "m6g.large"
-}
-
-variable "target_architecture" {
+variable "key_pair_name" {
   type    = string
   default = null
 }
 
-variable "min_nodes" {
-  type    = number
-  default = 1
-}
-
-variable "max_nodes" {
-  type    = number
-  default = 10
-}
-
-variable "desired_nodes" {
-  type    = number
-  default = 3
+variable "key_pair_name_prefix" {
+  type    = string
+  default = "inadev-kmeyer"
 }
