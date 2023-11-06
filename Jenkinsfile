@@ -20,6 +20,7 @@ pipeline {
                     script {
                         // Build the Docker image
                         sh "docker version || echo 'Docker not installed'"
+                        sh "aws ecr get-login-password --region us-east-2 | docker login --username AWS --password-stdin ${JENKINS_IMAGE}"
                         sh "docker build -t ${IMAGE_REPOSITORY}:${GIT_COMMIT} src/app/ && docker push ${IMAGE_REPOSITORY}:${GIT_COMMIT}"
                     }
                 }
