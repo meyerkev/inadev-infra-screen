@@ -13,5 +13,5 @@ popd
 
 echo "Tearing down ECR"
 pushd terraform/ecr
-terraform destroy -auto-approve -var "force_delete_ecr_repositories=true"
+terraform destroy -auto-approve -var-file=teardown.tfvars
 popd
