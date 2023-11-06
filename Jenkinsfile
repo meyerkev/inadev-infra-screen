@@ -1,12 +1,5 @@
 pipeline {
-    agent any
-
-    environment {
-        HELM_VERSION = "3.10.1"  // Change to the desired Helm version
-        CHART_NAME = "inadev-kmeyer"  // Change to your Helm chart name
-        NAMESPACE = "inadev-kmeyer"  // Change to the Kubernetes namespace where you want to install the chart
-        IMAGE_REPOSITORY = "386145735201.dkr.ecr.us-east-2.amazonaws.com/weather"  // Change to your Docker image repository
-    }        
+    agent any     
 
     environment {
         HELM_VERSION = "3.10.1"  // Change to the desired Helm version
@@ -17,7 +10,7 @@ pipeline {
         git_tag = sh(returnStdout: true, script: "date +%s").trim()
     }
 
-    stages {C
+    stages {
         stage('Checkout') {
             steps {
                 checkout scm
