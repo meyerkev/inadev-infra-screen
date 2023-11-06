@@ -19,7 +19,6 @@ pipeline {
 
         stage('Build Docker in docker') {
             steps {
-                checkout scmGit(branches: [[name: 'main']], extensions: [], userRemoteConfigs: [[url: 'https://github.com/meyerkev/inadev-infra-screen.git/']])
                 container('dind') {
                     script {
                         // Build the Docker image
@@ -35,7 +34,6 @@ pipeline {
         }
         stage('Deploy Helm chart') {
             steps {
-                checkout scmGit(branches: [[name: 'main']], extensions: [], userRemoteConfigs: [[url: 'https://github.com/meyerkev/inadev-infra-screen.git/']])
                 script {
                     // Install the Helm chart
                     sh "helm upgrade --install ${CHART_NAME} ./helm/inadev-kmeyer --namespace=${NAMESPACE} --create-namespace --atomic --timeout=5m --wait --set image.repository=${IMAGE_REPOSITORY},image.tag=${git_tag}"
